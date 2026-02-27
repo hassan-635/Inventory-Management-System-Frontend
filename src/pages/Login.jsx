@@ -18,14 +18,27 @@ const Login = () => {
         if (email && password) {
             setLoading(true);
             try {
+                console.log('Sending login request...', { email: email });
                 const response = await axios.post('/api/auth/login', { email, password });
-                const { token, user } = response.data;
+                console.log('Login response:', response.data);
 
-                // Store token securely (localStorage for now as requested)
-                localStorage.setItem('inventory_token', token);
-                localStorage.setItem('inventory_user', JSON.stringify(user));
+                // Backend returns: { _id, name, email, role, token }
+                const { token, ...userData } = response.data;
 
-                navigate('/products');
+                if (token) {
+                    // Store actual token and user info
+                    localStorage.setItem('inventory_token', token);
+                    localStorage.setItem('inventory_user', JSON.stringify({
+                        id: userData._id,
+                        name: userData.name,
+                        email: userData.email,
+                        role: userData.role
+                    }));
+                    // Use replace to prevent going back to login screen
+                    navigate('/products', { replace: true });
+                } else {
+                    throw new Error('No token received');
+                }
             } catch (err) {
                 setError(err.response?.data?.error || 'Login failed. Please check your credentials.');
             } finally {
