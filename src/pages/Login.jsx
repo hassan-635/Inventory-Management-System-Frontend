@@ -29,13 +29,18 @@ const Login = () => {
                     // Store actual token and user info
                     localStorage.setItem('inventory_token', token);
                     localStorage.setItem('inventory_user', JSON.stringify({
-                        id: userData._id,
+                        id: userData.id || userData._id,
                         name: userData.name,
                         email: userData.email,
                         role: userData.role
                     }));
-                    // Use replace to prevent going back to login screen
-                    navigate('/products', { replace: true });
+
+                    // Redirect based on role
+                    if (userData.role === 'developer') {
+                        navigate('/developer-dashboard', { replace: true });
+                    } else {
+                        navigate('/products', { replace: true });
+                    }
                 } else {
                     throw new Error('No token received');
                 }

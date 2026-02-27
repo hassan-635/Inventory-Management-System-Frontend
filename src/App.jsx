@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Login from './pages/Login';
+import DeveloperDashboard from './pages/DeveloperDashboard';
 import Products from './pages/Products';
 import Buyers from './pages/Buyers';
 import Suppliers from './pages/Suppliers';
@@ -13,6 +14,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/developer-dashboard" element={<DeveloperDashboard />} />
 
         {/* Protected Routes Wrapper */}
         <Route element={<ProtectedRoute />}>
