@@ -16,7 +16,9 @@ const Products = () => {
         id: null,
         name: '',
         price: '',
+        max_discount: '',
         purchased_from: '',
+        purchase_date: '',
         total_quantity: ''
     });
 
@@ -58,7 +60,15 @@ const Products = () => {
 
     const openAddModal = () => {
         setModalMode('add');
-        setFormData({ id: null, name: '', price: '', purchased_from: '', total_quantity: '' });
+        setFormData({
+            id: null,
+            name: '',
+            price: '',
+            max_discount: '',
+            purchased_from: '',
+            purchase_date: new Date().toISOString().split('T')[0],
+            total_quantity: ''
+        });
         setIsModalOpen(true);
     };
 
@@ -68,7 +78,9 @@ const Products = () => {
             id: product.id,
             name: product.name,
             price: product.price,
+            max_discount: product.max_discount || '',
             purchased_from: product.purchased_from || '',
+            purchase_date: product.purchase_date ? new Date(product.purchase_date).toISOString().split('T')[0] : '',
             total_quantity: product.total_quantity
         });
         setIsModalOpen(true);
@@ -90,6 +102,7 @@ const Products = () => {
             const dataToSubmit = {
                 ...formData,
                 price: parseFloat(formData.price),
+                max_discount: formData.max_discount ? parseFloat(formData.max_discount) : null,
                 total_quantity: parseInt(formData.total_quantity, 10),
             };
 
@@ -164,9 +177,12 @@ const Products = () => {
                     <table className="data-table">
                         <thead>
                             <tr>
+                                <th>ID</th>
                                 <th>Name</th>
                                 <th>Price</th>
+                                <th>Max Discount</th>
                                 <th>Purchased From</th>
+                                <th>Purchase Date</th>
                                 <th>Total Qty</th>
                                 <th>Remaining Qty</th>
                                 <th>Actions</th>
@@ -175,9 +191,12 @@ const Products = () => {
                         <tbody>
                             {filteredProducts.map(product => (
                                 <tr key={product.id} className="animate-fade-in">
+                                    <td>{product.id}</td>
                                     <td className="font-medium">{product.name}</td>
                                     <td>Rs. {product.price}</td>
+                                    <td>{product.max_discount ? `Rs. ${product.max_discount}` : '-'}</td>
                                     <td>{product.purchased_from || '-'}</td>
+                                    <td>{product.purchase_date ? new Date(product.purchase_date).toLocaleDateString() : '-'}</td>
                                     <td>{product.total_quantity}</td>
                                     <td>
                                         <span className={`qty-badge ${product.remaining_quantity <= 10 ? 'low-stock' : 'in-stock'}`}>
@@ -254,6 +273,29 @@ const Products = () => {
                                         onChange={handleFormChange}
                                         min="1"
                                         required
+                                    />
+                                </div>
+                            </div>
+                            <div className="form-grid">
+                                <div className="input-group">
+                                    <label>Max Discount (Rs)</label>
+                                    <input
+                                        type="number"
+                                        className="input-field"
+                                        name="max_discount"
+                                        value={formData.max_discount}
+                                        onChange={handleFormChange}
+                                        min="0"
+                                    />
+                                </div>
+                                <div className="input-group">
+                                    <label>Purchase Date</label>
+                                    <input
+                                        type="date"
+                                        className="input-field"
+                                        name="purchase_date"
+                                        value={formData.purchase_date}
+                                        onChange={handleFormChange}
                                     />
                                 </div>
                             </div>

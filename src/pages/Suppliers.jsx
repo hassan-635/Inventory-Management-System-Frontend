@@ -5,9 +5,11 @@ import './Suppliers.css';
 
 const Suppliers = () => {
     const [suppliers, setSuppliers] = useState([]);
+    const [productsList, setProductsList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [totalPayables, setTotalPayables] = useState(0);
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -16,12 +18,30 @@ const Suppliers = () => {
         id: null,
         name: '',
         phone: '',
-        company_name: ''
+        company_name: '',
+        product_id: '',
+        quantity: '',
+        total_amount: '',
+        paid_amount: '',
+        purchase_date: new Date().toISOString().split('T')[0]
     });
 
     useEffect(() => {
         fetchSuppliers();
+        fetchProducts();
     }, []);
+
+    const fetchProducts = async () => {
+        try {
+            const token = localStorage.getItem('inventory_token');
+            const response = await axios.get('/api/products', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setProductsList(response.data);
+        } catch (err) {
+            console.error('Error fetching products:', err);
+        }
+    };
 
     const fetchSuppliers = async () => {
         try {
@@ -30,7 +50,20 @@ const Suppliers = () => {
             const response = await axios.get('/api/suppliers', {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setSuppliers(response.data);
+            const data = response.data;
+            setSuppliers(data);
+
+            // Calculate total payables
+            let payables = 0;
+            data.forEach(supplier => {
+                if (supplier.supplier_transactions && supplier.supplier_transactions.length > 0) {
+                    supplier.supplier_transactions.forEach(txn => {
+                        payables += (Number(txn.total_amount || 0) - Number(txn.paid_amount || 0));
+                    });
+                }
+            });
+            setTotalPayables(payables);
+
             setError(null);
         } catch (err) {
             console.error('Error fetching suppliers:', err);
@@ -56,7 +89,17 @@ const Suppliers = () => {
 
     const openAddModal = () => {
         setModalMode('add');
-        setFormData({ id: null, name: '', phone: '', company_name: '' });
+        setFormData({
+            id: null,
+            name: '',
+            phone: '',
+            company_name: '',
+            product_id: '',
+            quantity: '',
+            total_amount: '',
+            paid_amount: '0',
+            purchase_date: new Date().toISOString().split('T')[0]
+        });
         setIsModalOpen(true);
     };
 
@@ -91,9 +134,26 @@ const Suppliers = () => {
             };
 
             if (modalMode === 'add') {
-                await axios.post('/api/suppliers', payload, {
+                const supplierRes = await axios.post('/api/suppliers', payload, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
+
+                const newSupplier = supplierRes.data.data?.[0];
+
+                if (newSupplier && formData.product_id && Number(formData.quantity) > 0) {
+                    const purchasePayload = {
+                        supplier_id: newSupplier.id,
+                        product_id: formData.product_id,
+                        quantity: Number(formData.quantity),
+                        total_amount: Number(formData.total_amount),
+                        paid_amount: Number(formData.paid_amount || 0),
+                        purchase_date: formData.purchase_date
+                    };
+
+                    await axios.post('/api/purchases', purchasePayload, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                }
             } else {
                 await axios.put(`/api/suppliers/${formData.id}`, payload, {
                     headers: { Authorization: `Bearer ${token}` }
@@ -112,7 +172,16 @@ const Suppliers = () => {
         (supplier.company_name && supplier.company_name.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
-    // Placeholder pending: requires aggregate of supplier_transactions not currently configured on base GET /suppliers
+    const flattenedData = [];
+    filteredSuppliers.forEach(supplier => {
+        if (supplier.supplier_transactions && supplier.supplier_transactions.length > 0) {
+            supplier.supplier_transactions.forEach(txn => {
+                flattenedData.push({ ...supplier, txn });
+            });
+        } else {
+            flattenedData.push({ ...supplier, txn: null });
+        }
+    });
     return (
         <div className="page-container">
             <div className="page-header">
@@ -133,7 +202,7 @@ const Suppliers = () => {
                     </div>
                     <div className="stat-content">
                         <p className="stat-label">Total Pending Payables</p>
-                        <h2 className="stat-value text-danger">Rs. 0</h2>
+                        <h2 className="stat-value text-danger">Rs. {totalPayables.toLocaleString()}</h2>
                     </div>
                 </div>
             </div>
@@ -161,57 +230,83 @@ const Suppliers = () => {
                         <table className="custom-table">
                             <thead>
                                 <tr>
+                                    <th>ID</th>
                                     <th>Supplier / Company</th>
                                     <th>Contact</th>
-                                    <th>Created At</th>
+                                    <th>Product</th>
+                                    <th>Qty</th>
+                                    <th>Total Amt</th>
+                                    <th>Paid Amt</th>
+                                    <th>Remaining (Payable)</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredSuppliers.map(supplier => (
-                                    <tr key={supplier.id} className="animate-fade-in">
-                                        <td>
-                                            <div className="supplier-name-cell">
-                                                <div className="supplier-avatar">
-                                                    <Truck size={18} />
+                                {flattenedData.map((row, idx) => {
+                                    const { txn } = row;
+                                    const remainingPayable = txn ? (Number(txn.total_amount || 0) - Number(txn.paid_amount || 0)) : 0;
+                                    return (
+                                        <tr key={txn ? `txn-${txn.id}` : `supplier-${row.id}`} className="animate-fade-in">
+                                            <td>{row.id}</td>
+                                            <td>
+                                                <div className="supplier-name-cell">
+                                                    <div className="supplier-avatar">
+                                                        <Truck size={18} />
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-medium text-primary">{row.name}</div>
+                                                        {row.company_name && (
+                                                            <div className="text-secondary" style={{ fontSize: '0.8rem' }}>
+                                                                {row.company_name}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <div className="font-medium text-primary">{supplier.name}</div>
-                                                    {supplier.company_name && (
-                                                        <div className="text-secondary" style={{ fontSize: '0.8rem' }}>
-                                                            {supplier.company_name}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td><span className="text-secondary">{supplier.phone || '-'}</span></td>
-                                        <td><span className="text-secondary">{new Date(supplier.created_at).toLocaleDateString()}</span></td>
-                                        <td>
-                                            <div className="action-buttons flex gap-2">
-                                                <button
-                                                    className="icon-btn-small text-accent"
-                                                    title="Edit"
-                                                    onClick={() => openEditModal(supplier)}
-                                                >
-                                                    <Edit size={16} />
-                                                </button>
-                                                <button
-                                                    className="icon-btn-small text-danger"
-                                                    title="Delete"
-                                                    onClick={() => handleDelete(supplier.id)}
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
+                                            </td>
+                                            <td><span className="text-secondary">{row.phone || '-'}</span></td>
 
-                                {filteredSuppliers.length === 0 && (
+                                            {txn ? (
+                                                <>
+                                                    <td><span className="font-medium">{txn.products?.name || `Product ID: ${txn.product_id}`}</span></td>
+                                                    <td>{txn.quantity}</td>
+                                                    <td>Rs. {txn.total_amount}</td>
+                                                    <td>Rs. {txn.paid_amount}</td>
+                                                    <td>
+                                                        <span className={`qty-badge ${remainingPayable > 0 ? 'low-stock text-danger' : 'in-stock'}`}>
+                                                            Rs. {remainingPayable}
+                                                        </span>
+                                                    </td>
+                                                </>
+                                            ) : (
+                                                <td colSpan="5" className="text-secondary text-center italic">No transactions</td>
+                                            )}
+
+                                            <td>
+                                                <div className="action-buttons flex gap-2">
+                                                    <button
+                                                        className="icon-btn-small text-accent"
+                                                        title="Edit Supplier"
+                                                        onClick={() => openEditModal(row)}
+                                                    >
+                                                        <Edit size={16} />
+                                                    </button>
+                                                    <button
+                                                        className="icon-btn-small text-danger"
+                                                        title="Delete Supplier"
+                                                        onClick={() => handleDelete(row.id)}
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+
+                                {flattenedData.length === 0 && (
                                     <tr>
-                                        <td colSpan="4" className="text-center py-8 text-muted">
-                                            No suppliers found matching your search.
+                                        <td colSpan="9" className="text-center py-8 text-muted">
+                                            No suppliers or payable records found matching your search.
                                         </td>
                                     </tr>
                                 )}
@@ -264,6 +359,80 @@ const Suppliers = () => {
                                     required
                                 />
                             </div>
+
+                            {/* Only show transaction fields for Add Mode */}
+                            {modalMode === 'add' && (
+                                <>
+                                    <hr className="my-4 border-gray-700" />
+                                    <h3 className="text-lg font-medium text-gray-200 mb-4">Purchase / Payables Details (Optional)</h3>
+
+                                    <div className="form-grid">
+                                        <div className="input-group">
+                                            <label>Select Product</label>
+                                            <select
+                                                className="input-field"
+                                                name="product_id"
+                                                value={formData.product_id}
+                                                onChange={handleFormChange}
+                                            >
+                                                <option value="">-- Choose Product --</option>
+                                                {productsList.map(p => (
+                                                    <option key={p.id} value={p.id}>
+                                                        {p.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="input-group">
+                                            <label>Purchase Quantity</label>
+                                            <input
+                                                type="number"
+                                                className="input-field"
+                                                name="quantity"
+                                                value={formData.quantity}
+                                                onChange={handleFormChange}
+                                                min="1"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="form-grid">
+                                        <div className="input-group">
+                                            <label>Total Amount (Rs)</label>
+                                            <input
+                                                type="number"
+                                                className="input-field"
+                                                name="total_amount"
+                                                value={formData.total_amount}
+                                                onChange={handleFormChange}
+                                                min="0"
+                                            />
+                                        </div>
+                                        <div className="input-group">
+                                            <label>Paid Amount (Rs)</label>
+                                            <input
+                                                type="number"
+                                                className="input-field"
+                                                name="paid_amount"
+                                                value={formData.paid_amount}
+                                                onChange={handleFormChange}
+                                                min="0"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="input-group">
+                                        <label>Purchase Date</label>
+                                        <input
+                                            type="date"
+                                            className="input-field"
+                                            name="purchase_date"
+                                            value={formData.purchase_date}
+                                            onChange={handleFormChange}
+                                        />
+                                    </div>
+                                </>
+                            )}
 
                             <div className="modal-footer">
                                 <button type="button" className="btn-secondary" onClick={closeModal}>Cancel</button>

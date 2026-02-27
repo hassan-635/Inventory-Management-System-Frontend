@@ -5,9 +5,11 @@ import './Buyers.css';
 
 const Buyers = () => {
     const [buyers, setBuyers] = useState([]);
+    const [productsList, setProductsList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [totalOutstanding, setTotalOutstanding] = useState(0);
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -16,12 +18,30 @@ const Buyers = () => {
         id: null,
         name: '',
         phone: '',
-        address: ''
+        address: '',
+        product_id: '',
+        quantity: '',
+        total_amount: '',
+        paid_amount: '',
+        purchase_date: new Date().toISOString().split('T')[0]
     });
 
     useEffect(() => {
         fetchBuyers();
+        fetchProducts();
     }, []);
+
+    const fetchProducts = async () => {
+        try {
+            const token = localStorage.getItem('inventory_token');
+            const response = await axios.get('/api/products', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setProductsList(response.data);
+        } catch (err) {
+            console.error('Error fetching products:', err);
+        }
+    };
 
     const fetchBuyers = async () => {
         try {
@@ -30,7 +50,20 @@ const Buyers = () => {
             const response = await axios.get('/api/buyers', {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setBuyers(response.data);
+            const data = response.data;
+            setBuyers(data);
+
+            // Calculate total outstanding
+            let outstanding = 0;
+            data.forEach(buyer => {
+                if (buyer.buyer_transactions && buyer.buyer_transactions.length > 0) {
+                    buyer.buyer_transactions.forEach(txn => {
+                        outstanding += (Number(txn.total_amount || 0) - Number(txn.paid_amount || 0));
+                    });
+                }
+            });
+            setTotalOutstanding(outstanding);
+
             setError(null);
         } catch (err) {
             console.error('Error fetching buyers:', err);
@@ -56,11 +89,24 @@ const Buyers = () => {
 
     const openAddModal = () => {
         setModalMode('add');
-        setFormData({ id: null, name: '', phone: '', address: '' });
+        setFormData({
+            id: null,
+            name: '',
+            phone: '',
+            address: '',
+            product_id: '',
+            quantity: '',
+            total_amount: '',
+            paid_amount: '0',
+            purchase_date: new Date().toISOString().split('T')[0]
+        });
         setIsModalOpen(true);
     };
 
-    const openEditModal = (buyer) => {
+    const openEditModal = (buyer, _txn = null) => {
+        // Edit mode is disabled or constrained typically due to complex relations, 
+        // but let's just prefill buyer data. For Udhaar, usually a generic payment form is better.
+        // We'll leave this simple for now.
         setModalMode('edit');
         setFormData({
             id: buyer.id,
@@ -91,9 +137,27 @@ const Buyers = () => {
             };
 
             if (modalMode === 'add') {
-                await axios.post('/api/buyers', payload, {
+                const buyerRes = await axios.post('/api/buyers', payload, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
+
+                const newBuyer = buyerRes.data.data?.[0];
+
+                // If product is selected, create a credit sale transaction
+                if (newBuyer && formData.product_id && Number(formData.quantity) > 0) {
+                    const salePayload = {
+                        buyer_id: newBuyer.id,
+                        product_id: formData.product_id,
+                        quantity: Number(formData.quantity),
+                        total_amount: Number(formData.total_amount),
+                        paid_amount: Number(formData.paid_amount || 0),
+                        bill_type: 'CREDIT' // Udhaar
+                    };
+
+                    await axios.post('/api/sales', salePayload, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                }
             } else {
                 await axios.put(`/api/buyers/${formData.id}`, payload, {
                     headers: { Authorization: `Bearer ${token}` }
@@ -111,8 +175,17 @@ const Buyers = () => {
         buyer.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // Note: Udhaar/Outstanding logic is disabled as the backend schema uses `buyer_transactions` for math, 
-    // requiring join or aggregate not currently fetched by `/api/buyers`. UI placeholder maintained.
+    const flattenedData = [];
+    filteredBuyers.forEach(buyer => {
+        if (buyer.buyer_transactions && buyer.buyer_transactions.length > 0) {
+            buyer.buyer_transactions.forEach(txn => {
+                flattenedData.push({ ...buyer, txn });
+            });
+        } else {
+            // Buyer with no transactions yet
+            flattenedData.push({ ...buyer, txn: null });
+        }
+    });
 
     return (
         <div className="page-container">
@@ -134,7 +207,7 @@ const Buyers = () => {
                     </div>
                     <div className="stat-content">
                         <p className="stat-label">Total Outstanding (Udhaar)</p>
-                        <h2 className="stat-value">Rs. 0</h2>
+                        <h2 className="stat-value">Rs. {totalOutstanding.toLocaleString()}</h2>
                     </div>
                 </div>
             </div>
@@ -162,52 +235,78 @@ const Buyers = () => {
                         <table className="custom-table">
                             <thead>
                                 <tr>
+                                    <th>ID</th>
                                     <th>Buyer Name</th>
                                     <th>Contact</th>
                                     <th>Address</th>
-                                    <th>Created At</th>
+                                    <th>Product</th>
+                                    <th>Qty</th>
+                                    <th>Total Amt</th>
+                                    <th>Paid Amt</th>
+                                    <th>Remaining (Udhaar)</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredBuyers.map(buyer => (
-                                    <tr key={buyer.id} className="animate-fade-in">
-                                        <td>
-                                            <div className="buyer-name-cell">
-                                                <div className="buyer-avatar">
-                                                    {buyer.name.charAt(0).toUpperCase()}
+                                {flattenedData.map((row, idx) => {
+                                    const { txn } = row;
+                                    const remainingAmount = txn ? (Number(txn.total_amount || 0) - Number(txn.paid_amount || 0)) : 0;
+                                    return (
+                                        <tr key={txn ? `txn-${txn.id}` : `buyer-${row.id}`} className="animate-fade-in">
+                                            <td>{row.id}</td>
+                                            <td>
+                                                <div className="buyer-name-cell">
+                                                    <div className="buyer-avatar">
+                                                        {row.name.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <span className="font-medium text-primary">{row.name}</span>
                                                 </div>
-                                                <span className="font-medium text-primary">{buyer.name}</span>
-                                            </div>
-                                        </td>
-                                        <td><span className="text-secondary">{buyer.phone || '-'}</span></td>
-                                        <td><span className="text-secondary">{buyer.address || '-'}</span></td>
-                                        <td><span className="text-secondary">{new Date(buyer.created_at).toLocaleDateString()}</span></td>
-                                        <td>
-                                            <div className="action-buttons flex gap-2">
-                                                <button
-                                                    className="icon-btn-small text-accent"
-                                                    title="Edit"
-                                                    onClick={() => openEditModal(buyer)}
-                                                >
-                                                    <Edit size={16} />
-                                                </button>
-                                                <button
-                                                    className="icon-btn-small text-danger"
-                                                    title="Delete"
-                                                    onClick={() => handleDelete(buyer.id)}
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
+                                            </td>
+                                            <td><span className="text-secondary">{row.phone || '-'}</span></td>
+                                            <td><span className="text-secondary">{row.address || '-'}</span></td>
 
-                                {filteredBuyers.length === 0 && (
+                                            {txn ? (
+                                                <>
+                                                    <td><span className="font-medium">{txn.products?.name || `Product ID: ${txn.product_id}`}</span></td>
+                                                    <td>{txn.quantity}</td>
+                                                    <td>Rs. {txn.total_amount}</td>
+                                                    <td>Rs. {txn.paid_amount}</td>
+                                                    <td>
+                                                        <span className={`qty-badge ${remainingAmount > 0 ? 'low-stock' : 'in-stock'}`}>
+                                                            Rs. {remainingAmount}
+                                                        </span>
+                                                    </td>
+                                                </>
+                                            ) : (
+                                                <td colSpan="5" className="text-secondary text-center italic">No transactions</td>
+                                            )}
+
+                                            <td>
+                                                <div className="action-buttons flex gap-2">
+                                                    <button
+                                                        className="icon-btn-small text-accent"
+                                                        title="Edit Buyer Details"
+                                                        onClick={() => openEditModal(row)}
+                                                    >
+                                                        <Edit size={16} />
+                                                    </button>
+                                                    <button
+                                                        className="icon-btn-small text-danger"
+                                                        title="Delete Buyer"
+                                                        onClick={() => handleDelete(row.id)}
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+
+                                {flattenedData.length === 0 && (
                                     <tr>
-                                        <td colSpan="5" className="text-center py-8 text-muted">
-                                            No buyers found matching your search.
+                                        <td colSpan="10" className="text-center py-8 text-muted">
+                                            No buyers or Udhaar records found.
                                         </td>
                                     </tr>
                                 )}
@@ -259,6 +358,80 @@ const Buyers = () => {
                                     onChange={handleFormChange}
                                 />
                             </div>
+
+                            {/* Only show transaction fields for Add Mode */}
+                            {modalMode === 'add' && (
+                                <>
+                                    <hr className="my-4 border-gray-700" />
+                                    <h3 className="text-lg font-medium text-gray-200 mb-4">Udhaar / Credit Details (Optional)</h3>
+
+                                    <div className="form-grid">
+                                        <div className="input-group">
+                                            <label>Select Product</label>
+                                            <select
+                                                className="input-field"
+                                                name="product_id"
+                                                value={formData.product_id}
+                                                onChange={handleFormChange}
+                                            >
+                                                <option value="">-- Choose Product --</option>
+                                                {productsList.map(p => (
+                                                    <option key={p.id} value={p.id}>
+                                                        {p.name} (Qty: {p.remaining_quantity})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="input-group">
+                                            <label>Quantity</label>
+                                            <input
+                                                type="number"
+                                                className="input-field"
+                                                name="quantity"
+                                                value={formData.quantity}
+                                                onChange={handleFormChange}
+                                                min="1"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="form-grid">
+                                        <div className="input-group">
+                                            <label>Total Amount (Rs)</label>
+                                            <input
+                                                type="number"
+                                                className="input-field"
+                                                name="total_amount"
+                                                value={formData.total_amount}
+                                                onChange={handleFormChange}
+                                                min="0"
+                                            />
+                                        </div>
+                                        <div className="input-group">
+                                            <label>Paid Amount (Rs)</label>
+                                            <input
+                                                type="number"
+                                                className="input-field"
+                                                name="paid_amount"
+                                                value={formData.paid_amount}
+                                                onChange={handleFormChange}
+                                                min="0"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="input-group">
+                                        <label>Purchase Date</label>
+                                        <input
+                                            type="date"
+                                            className="input-field"
+                                            name="purchase_date"
+                                            value={formData.purchase_date}
+                                            onChange={handleFormChange}
+                                        />
+                                    </div>
+                                </>
+                            )}
 
                             <div className="modal-footer">
                                 <button type="button" className="btn-secondary" onClick={closeModal}>Cancel</button>

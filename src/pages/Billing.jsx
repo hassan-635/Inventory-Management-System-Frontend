@@ -13,6 +13,10 @@ const Billing = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    // Udhaar-specific fields
+    const [buyerPhone, setBuyerPhone] = useState('');
+    const [paidAmount, setPaidAmount] = useState('');
+
     useEffect(() => {
         fetchProducts();
     }, []);
@@ -37,8 +41,8 @@ const Billing = () => {
         if (product) {
             const qtyToAdd = parseInt(quantity);
 
-            // Validate stock for original bills
-            if (billType === 'original' && product.remaining_quantity < qtyToAdd) {
+            // Validate stock for original and udhaar bills (both are real sales)
+            if (billType !== 'dummy' && product.remaining_quantity < qtyToAdd) {
                 alert(`Cannot add ${qtyToAdd} items. Only ${product.remaining_quantity} in stock.`);
                 return;
             }
@@ -46,7 +50,7 @@ const Billing = () => {
             const existingItem = cart.find(item => item.id === product.id);
             if (existingItem) {
                 const newTotalQty = existingItem.quantity + qtyToAdd;
-                if (billType === 'original' && product.remaining_quantity < newTotalQty) {
+                if (billType !== 'dummy' && product.remaining_quantity < newTotalQty) {
                     alert(`Cannot add more. Exceeds stock of ${product.remaining_quantity}.`);
                     return;
                 }
@@ -71,30 +75,49 @@ const Billing = () => {
             return;
         }
 
+        // ===== DUMMY BILL =====
         if (billType === 'dummy') {
-            // Dummy bill does not hit backend to deduct stock
-            alert("Dummy Bill Generated Successfully! (No stock deducted)");
-            // Optional: Print or reset cart here
+            alert("Dummy Bill Generated! (No database changes)");
             window.print();
             return;
         }
 
-        // It's an Original bill, process sales via backend
+        // ===== UDHAAR VALIDATION =====
+        if (billType === 'udhaar' && (!customerName.trim() || !buyerPhone.trim())) {
+            alert('Udhaar bill requires Buyer Name and Phone.');
+            return;
+        }
+
         try {
             setLoading(true);
             const token = localStorage.getItem('inventory_token');
+            let buyerId = null;
 
-            // Send each item in cart as a separate sale for simplicity matching backend structure
+            // ===== UDHAAR: Create buyer first =====
+            if (billType === 'udhaar') {
+                const buyerRes = await axios.post('/api/buyers', {
+                    name: customerName.trim(),
+                    phone: buyerPhone.trim()
+                }, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                buyerId = buyerRes.data.data?.[0]?.id;
+                if (!buyerId) throw new Error('Failed to create buyer');
+            }
+
+            // ===== Process each cart item as a sale =====
+            const actualBillType = billType === 'udhaar' ? 'CREDIT' : 'REAL';
+            const userPaid = billType === 'udhaar' ? Number(paidAmount || 0) : null;
+
             for (const item of cart) {
+                const itemTotal = item.price * item.quantity;
                 const saleData = {
                     product_id: item.id,
                     quantity: item.quantity,
-                    total_amount: item.price * item.quantity,
-                    bill_type: 'REAL',
-                    // Note: backend expects buyer_id. In a true system, we'd lookup/create buyer. 
-                    // To proceed, we assume a placeholder or leave undefined if not enforced stringently
-                    buyer_id: null,
-                    paid_amount: item.price * item.quantity
+                    total_amount: itemTotal,
+                    bill_type: actualBillType,
+                    buyer_id: buyerId,
+                    paid_amount: billType === 'udhaar' ? userPaid : itemTotal
                 };
 
                 await axios.post('/api/sales', saleData, {
@@ -102,20 +125,28 @@ const Billing = () => {
                 });
             }
 
-            alert("Original Bill saved successfully! Stock has been deducted.");
+            if (billType === 'udhaar') {
+                const remaining = total - Number(paidAmount || 0);
+                alert(`Udhaar Bill saved! Stock deducted. Remaining balance: Rs. ${remaining}`);
+            } else {
+                alert('Original Bill saved! Stock has been deducted.');
+            }
+
             setCart([]);
             setCustomerName('');
-            fetchProducts(); // Refresh stock
+            setBuyerPhone('');
+            setPaidAmount('');
+            fetchProducts();
         } catch (err) {
-            console.error("Error creating sale:", err);
-            alert(err.response?.data?.error || "Failed to save bill. Please try again.");
+            console.error('Error creating sale:', err);
+            alert(err.response?.data?.error || 'Failed to save bill. Please try again.');
         } finally {
             setLoading(false);
         }
     };
 
     const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const tax = billType === 'original' ? subtotal * 0.18 : 0; // 18% tax for original, 0 for dummy
+    const tax = billType === 'original' ? subtotal * 0.18 : 0;
     const total = subtotal + tax;
 
     return (
@@ -140,22 +171,52 @@ const Billing = () => {
                                 value={billType}
                                 onChange={(e) => setBillType(e.target.value)}
                             >
-                                <option value="original">Original (With Tax & Stock Update)</option>
-                                <option value="dummy">Dummy (Estimate/No Tax & No Stock Update)</option>
+                                <option value="original">Original (Deducts Stock)</option>
+                                <option value="dummy">Dummy (Estimate Only — No DB Changes)</option>
+                                <option value="udhaar">Udhaar (Credit Sale — Saves to Buyers)</option>
                             </select>
                         </div>
 
                         <div className="input-group">
-                            <label>Customer Name</label>
+                            <label>{billType === 'udhaar' ? 'Buyer Name *' : 'Customer Name'}</label>
                             <input
                                 type="text"
                                 className="input-field"
-                                placeholder="Enter customer name"
+                                placeholder={billType === 'udhaar' ? 'Enter buyer name (required)' : 'Enter customer name'}
                                 value={customerName}
                                 onChange={(e) => setCustomerName(e.target.value)}
+                                required={billType === 'udhaar'}
                             />
                         </div>
                     </div>
+
+                    {/* Udhaar-specific fields */}
+                    {billType === 'udhaar' && (
+                        <div className="form-grid">
+                            <div className="input-group">
+                                <label>Buyer Phone *</label>
+                                <input
+                                    type="text"
+                                    className="input-field"
+                                    placeholder="Enter buyer phone"
+                                    value={buyerPhone}
+                                    onChange={(e) => setBuyerPhone(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="input-group">
+                                <label>Paid Amount (Rs)</label>
+                                <input
+                                    type="number"
+                                    className="input-field"
+                                    placeholder="0"
+                                    min="0"
+                                    value={paidAmount}
+                                    onChange={(e) => setPaidAmount(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    )}
 
                     <div className="divider"></div>
 
@@ -170,7 +231,7 @@ const Billing = () => {
                                 <option value="">Select a product...</option>
                                 {products.map(p => (
                                     <option key={p.id} value={p.id}>
-                                        {p.name} - Rs. {p.price} {billType === 'original' ? `(Stock: ${p.remaining_quantity})` : ''}
+                                        {p.name} - Rs. {p.price} {billType !== 'dummy' ? `(Stock: ${p.remaining_quantity})` : ''}
                                     </option>
                                 ))}
                             </select>
@@ -234,7 +295,7 @@ const Billing = () => {
                         <p className="receipt-contact">Ph: +92 300 0000000</p>
 
                         <div className="receipt-type-badge">
-                            {billType === 'dummy' ? 'ESTIMATE / DUMMY BILL' : 'TAX INVOICE'}
+                            {billType === 'dummy' ? 'ESTIMATE / DUMMY BILL' : billType === 'udhaar' ? 'UDHAAR / CREDIT INVOICE' : 'TAX INVOICE'}
                         </div>
                     </div>
 
@@ -283,6 +344,18 @@ const Billing = () => {
                             <span>Total Amount</span>
                             <span>Rs. {total.toLocaleString()}</span>
                         </div>
+                        {billType === 'udhaar' && (
+                            <>
+                                <div className="summary-row">
+                                    <span>Paid Amount</span>
+                                    <span>Rs. {Number(paidAmount || 0).toLocaleString()}</span>
+                                </div>
+                                <div className="summary-row total" style={{ color: '#ef4444' }}>
+                                    <span>Remaining (Udhaar)</span>
+                                    <span>Rs. {(total - Number(paidAmount || 0)).toLocaleString()}</span>
+                                </div>
+                            </>
+                        )}
                     </div>
 
                     <div className="flex gap-2 mt-auto">
@@ -296,7 +369,7 @@ const Billing = () => {
                             disabled={loading || cart.length === 0}
                         >
                             <Save size={18} />
-                            <span>{loading ? 'Saving...' : 'Save & Print'}</span>
+                            <span>{loading ? 'Saving...' : billType === 'dummy' ? 'Print Only' : billType === 'udhaar' ? 'Save Udhaar' : 'Save & Print'}</span>
                         </button>
                     </div>
                 </div>
