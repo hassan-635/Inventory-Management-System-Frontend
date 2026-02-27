@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Plus, Trash2, Printer, Search, Receipt, Calculator, Save } from 'lucide-react';
+import { Plus, Trash2, Printer, Search, Receipt, Calculator, Save, RefreshCw } from 'lucide-react';
 import './Billing.css';
 
 const Billing = () => {
@@ -37,7 +37,7 @@ const Billing = () => {
     const addToCart = () => {
         if (!selectedProduct) return;
 
-        const product = products.find(p => p.id === parseInt(selectedProduct));
+        const product = products.find(p => String(p.id) === String(selectedProduct));
         if (product) {
             const qtyToAdd = parseInt(quantity);
 
@@ -241,14 +241,36 @@ const Billing = () => {
                                 type="number"
                                 className="input-field"
                                 min="1"
+                                max={billType !== 'dummy' && selectedProduct ? (products.find(p => String(p.id) === String(selectedProduct))?.remaining_quantity || '') : ''}
                                 value={quantity}
-                                onChange={(e) => setQuantity(e.target.value)}
+                                onChange={(e) => {
+                                    const val = parseInt(e.target.value) || 1;
+                                    const selected = products.find(p => String(p.id) === String(selectedProduct));
+                                    if (billType !== 'dummy' && selected && val > selected.remaining_quantity) {
+                                        setQuantity(selected.remaining_quantity);
+                                    } else {
+                                        setQuantity(e.target.value);
+                                    }
+                                }}
                             />
                         </div>
                         <button className="btn-primary add-btn" onClick={addToCart}>
                             <Plus size={20} />
                         </button>
                     </div>
+                    {selectedProduct && billType !== 'dummy' && (() => {
+                        const sel = products.find(p => String(p.id) === String(selectedProduct));
+                        return sel ? (
+                            <p className="stock-hint" style={{
+                                marginTop: '0.5rem',
+                                fontSize: '0.82rem',
+                                color: sel.remaining_quantity > 0 ? '#a78bfa' : '#ef4444',
+                                fontWeight: 500
+                            }}>
+                                📦 Remaining Stock: <strong>{sel.remaining_quantity}</strong> units of "{sel.name}"
+                            </p>
+                        ) : null;
+                    })()}
                 </div>
 
                 <div className="cart-section glass-panel">
@@ -324,7 +346,7 @@ const Billing = () => {
                             <div key={item.id} className="receipt-table-row">
                                 <span className="item-name-col">{item.name}</span>
                                 <span>{item.quantity}</span>
-                                <span>{(item.price * item.quantity).toLocaleString()}</span>
+                                <span>Rs. {(item.price * item.quantity).toLocaleString()}</span>
                             </div>
                         ))}
                     </div>
@@ -358,14 +380,25 @@ const Billing = () => {
                         )}
                     </div>
 
-                    <div className="flex gap-2 mt-auto">
+                    <div className="flex gap-2 mt-auto" style={{ flexWrap: 'wrap' }}>
                         <button className="btn-secondary flex-1" onClick={() => window.print()}>
                             <Printer size={18} />
                             <span>Print</span>
                         </button>
+                        {billType !== 'dummy' && (
+                            <button
+                                className="btn-primary flex-1"
+                                style={{ background: '#22c55e', borderColor: '#22c55e' }}
+                                onClick={handleSaveBill}
+                                disabled={loading || cart.length === 0}
+                            >
+                                <RefreshCw size={18} />
+                                <span>{loading ? 'Saving...' : 'Update'}</span>
+                            </button>
+                        )}
                         <button
                             className="btn-primary flex-1 bg-accent"
-                            onClick={handleSaveBill}
+                            onClick={() => { handleSaveBill(); setTimeout(() => window.print(), 500); }}
                             disabled={loading || cart.length === 0}
                         >
                             <Save size={18} />
