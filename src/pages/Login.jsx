@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { Mail, Lock, LogIn, LayoutDashboard } from 'lucide-react';
 import './Login.css';
 
@@ -7,12 +8,29 @@ const Login = () => {
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
+        setError('');
+
         if (email && password) {
-            // Dummy authentication
-            navigate('/products');
+            setLoading(true);
+            try {
+                const response = await axios.post('/api/auth/login', { email, password });
+                const { token, user } = response.data;
+
+                // Store token securely (localStorage for now as requested)
+                localStorage.setItem('inventory_token', token);
+                localStorage.setItem('inventory_user', JSON.stringify(user));
+
+                navigate('/products');
+            } catch (err) {
+                setError(err.response?.data?.error || 'Login failed. Please check your credentials.');
+            } finally {
+                setLoading(false);
+            }
         }
     };
 
@@ -32,6 +50,7 @@ const Login = () => {
                 </div>
 
                 <form onSubmit={handleLogin} className="login-form">
+                    {error && <div className="error-message">{error}</div>}
                     <div className="input-group">
                         <label>Email Address</label>
                         <div className="input-wrapper">
@@ -71,9 +90,9 @@ const Login = () => {
                         <a href="#" className="forgot-password">Forgot Password?</a>
                     </div>
 
-                    <button type="submit" className="btn-primary login-btn">
-                        <span>Sign In</span>
-                        <LogIn size={20} />
+                    <button type="submit" className="btn-primary login-btn" disabled={loading}>
+                        <span>{loading ? 'Signing in...' : 'Sign In'}</span>
+                        {!loading && <LogIn size={20} />}
                     </button>
                 </form>
             </div>

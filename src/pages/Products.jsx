@@ -1,28 +1,120 @@
-import { useState } from 'react';
-import { Search, Plus, Package, SlidersHorizontal } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Search, Plus, Package, SlidersHorizontal, Edit, Trash2, X } from 'lucide-react';
 import './Products.css';
 
-const MOCK_PRODUCTS = [
-    { id: 1, name: 'Premium Emulsion Paint', category: 'Paint', price: '$45.00', stock: 120, status: 'In Stock' },
-    { id: 2, name: 'Weather-Resistant Exterior', category: 'Paint', price: '$65.00', stock: 45, status: 'Low Stock' },
-    { id: 3, name: 'Steel Claw Hammer', category: 'Hardware', price: '$18.50', stock: 200, status: 'In Stock' },
-    { id: 4, name: 'Assorted Screws Box', category: 'Hardware', price: '$12.00', stock: 500, status: 'In Stock' },
-    { id: 5, name: 'Industrial Power Drill', category: 'Hardware', price: '$180.00', stock: 12, status: 'Low Stock' },
-    { id: 6, name: 'Copper Wire Bundle (50m)', category: 'Electricity', price: '$40.00', stock: 80, status: 'In Stock' },
-    { id: 7, name: 'LED Bulbs (Pack of 4)', category: 'Electricity', price: '$15.00', stock: 300, status: 'In Stock' },
-    { id: 8, name: 'Heavy Duty Circuit Breaker', category: 'Electricity', price: '$85.00', stock: 0, status: 'Out of Stock' },
-];
-
-const CATEGORIES = ['All', 'Paint', 'Hardware', 'Electricity'];
-
 const Products = () => {
-    const [activeCategory, setActiveCategory] = useState('All');
+    const [products, setProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
 
-    const filteredProducts = MOCK_PRODUCTS.filter(product => {
-        const matchesCategory = activeCategory === 'All' || product.category === activeCategory;
+    // Modal State
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalMode, setModalMode] = useState('add'); // 'add' or 'edit'
+    const [formData, setFormData] = useState({
+        id: null,
+        name: '',
+        price: '',
+        purchased_from: '',
+        total_quantity: ''
+    });
+
+    useEffect(() => {
+        fetchProducts();
+    }, []);
+
+    const fetchProducts = async () => {
+        try {
+            setLoading(true);
+            const token = localStorage.getItem('inventory_token');
+            const response = await axios.get('/api/products', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setProducts(response.data);
+            setError(null);
+        } catch (err) {
+            console.error('Error fetching products:', err);
+            setError('Failed to load products. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this product?')) return;
+
+        try {
+            const token = localStorage.getItem('inventory_token');
+            await axios.delete(`/api/products/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setProducts(products.filter(p => p.id !== id));
+        } catch (err) {
+            console.error('Error deleting product:', err);
+            alert('Failed to delete product.');
+        }
+    };
+
+    const openAddModal = () => {
+        setModalMode('add');
+        setFormData({ id: null, name: '', price: '', purchased_from: '', total_quantity: '' });
+        setIsModalOpen(true);
+    };
+
+    const openEditModal = (product) => {
+        setModalMode('edit');
+        setFormData({
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            purchased_from: product.purchased_from || '',
+            total_quantity: product.total_quantity
+        });
+        setIsModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setIsModalOpen(false);
+    };
+
+    const handleFormChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleFormSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const token = localStorage.getItem('inventory_token');
+            const dataToSubmit = {
+                ...formData,
+                price: parseFloat(formData.price),
+                total_quantity: parseInt(formData.total_quantity, 10),
+            };
+
+            if (modalMode === 'add') {
+                const response = await axios.post('/api/products', dataToSubmit, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                // Optimistically fetch again to get accurate remaining_quantity etc.
+                fetchProducts();
+            } else {
+                const response = await axios.put(`/api/products/${formData.id}`, dataToSubmit, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                fetchProducts();
+            }
+            closeModal();
+        } catch (err) {
+            console.error('Error saving product:', err);
+            alert(err.response?.data?.error || 'Failed to save product.');
+        }
+    };
+
+    const filteredProducts = products.filter(product => {
         const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesCategory && matchesSearch;
+        return matchesSearch;
     });
 
     return (
@@ -32,7 +124,7 @@ const Products = () => {
                     <h1 className="page-title">Products Inventory</h1>
                     <p className="page-subtitle">Manage and track your supplies</p>
                 </div>
-                <button className="btn-primary flex items-center gap-2">
+                <button className="btn-primary flex items-center gap-2" onClick={openAddModal}>
                     <Plus size={20} />
                     <span>Add Product</span>
                 </button>
@@ -50,51 +142,143 @@ const Products = () => {
                     />
                 </div>
 
-                <div className="category-tabs">
-                    {CATEGORIES.map(category => (
-                        <button
-                            key={category}
-                            className={`tab-btn ${activeCategory === category ? 'active' : ''}`}
-                            onClick={() => setActiveCategory(category)}
-                        >
-                            {category}
-                        </button>
-                    ))}
-                </div>
+                <div className="flex-1"></div>
 
                 <button className="icon-btn" title="Filter options">
                     <SlidersHorizontal size={20} />
                 </button>
             </div>
 
-            <div className="products-grid">
-                {filteredProducts.map(product => (
-                    <div key={product.id} className="product-card glass-panel animate-fade-in">
-                        <div className="product-image-placeholder">
-                            <Package size={48} className="placeholder-icon" />
-                            <span className={`status-badge ${product.status.replace(/ /g, '-').toLowerCase()}`}>
-                                {product.status}
-                            </span>
-                        </div>
-                        <div className="product-info">
-                            <span className="product-category">{product.category}</span>
-                            <h3 className="product-name">{product.name}</h3>
-                            <div className="product-meta">
-                                <span className="product-price">{product.price}</span>
-                                <span className="product-stock">Stock: {product.stock}</span>
-                            </div>
-                        </div>
-                    </div>
-                ))}
+            {error && <div className="error-message">{error}</div>}
 
-                {filteredProducts.length === 0 && (
+            <div className="table-container glass-panel">
+                {loading ? (
+                    <div className="loading-state">Loading products...</div>
+                ) : filteredProducts.length === 0 ? (
                     <div className="empty-state">
                         <Package size={48} className="empty-icon" />
                         <h3>No products found</h3>
-                        <p>Try adjusting your search or category filter</p>
+                        <p>Try adjusting your search or add a new product</p>
                     </div>
+                ) : (
+                    <table className="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Price</th>
+                                <th>Purchased From</th>
+                                <th>Total Qty</th>
+                                <th>Remaining Qty</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredProducts.map(product => (
+                                <tr key={product.id} className="animate-fade-in">
+                                    <td className="font-medium">{product.name}</td>
+                                    <td>Rs. {product.price}</td>
+                                    <td>{product.purchased_from || '-'}</td>
+                                    <td>{product.total_quantity}</td>
+                                    <td>
+                                        <span className={`qty-badge ${product.remaining_quantity <= 10 ? 'low-stock' : 'in-stock'}`}>
+                                            {product.remaining_quantity}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div className="action-buttons">
+                                            <button
+                                                className="icon-btn-small text-accent"
+                                                title="Edit"
+                                                onClick={() => openEditModal(product)}
+                                            >
+                                                <Edit size={16} />
+                                            </button>
+                                            <button
+                                                className="icon-btn-small text-danger"
+                                                title="Delete"
+                                                onClick={() => handleDelete(product.id)}
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 )}
             </div>
+
+            {/* Modal for Add / Edit */}
+            {isModalOpen && (
+                <div className="modal-overlay">
+                    <div className="modal-content glass-panel animate-fade-in">
+                        <div className="modal-header">
+                            <h2>{modalMode === 'add' ? 'Add New Product' : 'Edit Product'}</h2>
+                            <button className="icon-btn-small" onClick={closeModal}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleFormSubmit} className="modal-body">
+                            <div className="input-group">
+                                <label>Name</label>
+                                <input
+                                    type="text"
+                                    className="input-field"
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={handleFormChange}
+                                    required
+                                />
+                            </div>
+                            <div className="form-grid">
+                                <div className="input-group">
+                                    <label>Price (Rs)</label>
+                                    <input
+                                        type="number"
+                                        className="input-field"
+                                        name="price"
+                                        value={formData.price}
+                                        onChange={handleFormChange}
+                                        min="0"
+                                        required
+                                    />
+                                </div>
+                                <div className="input-group">
+                                    <label>Total Quantity</label>
+                                    <input
+                                        type="number"
+                                        className="input-field"
+                                        name="total_quantity"
+                                        value={formData.total_quantity}
+                                        onChange={handleFormChange}
+                                        min="1"
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <div className="input-group">
+                                <label>Purchased From</label>
+                                <input
+                                    type="text"
+                                    className="input-field"
+                                    name="purchased_from"
+                                    value={formData.purchased_from}
+                                    onChange={handleFormChange}
+                                    placeholder="Supplier name or address"
+                                />
+                            </div>
+
+                            <div className="modal-footer">
+                                <button type="button" className="btn-secondary" onClick={closeModal}>Cancel</button>
+                                <button type="submit" className="btn-primary">
+                                    {modalMode === 'add' ? 'Save Product' : 'Update Product'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
