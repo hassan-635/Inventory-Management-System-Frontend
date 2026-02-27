@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Truck, FileText, Package } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, FileText, Package, BarChart3 } from 'lucide-react';
 import './Sidebar.css';
 
 const Sidebar = () => {
@@ -10,6 +10,7 @@ const Sidebar = () => {
         { path: '/buyers', name: 'Buyers (Udhaar)', icon: <Users size={20} /> },
         { path: '/suppliers', name: 'Suppliers', icon: <Truck size={20} /> },
         { path: '/billing', name: 'Billing', icon: <FileText size={20} /> },
+        { path: '/sales', name: 'Recent Sales', icon: <BarChart3 size={20} /> },
     ];
 
     return (

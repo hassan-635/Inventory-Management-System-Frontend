@@ -5,6 +5,7 @@ import './Products.css';
 
 const Products = () => {
     const [products, setProducts] = useState([]);
+    const [suppliersList, setSuppliersList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -24,6 +25,7 @@ const Products = () => {
 
     useEffect(() => {
         fetchProducts();
+        fetchSuppliers();
     }, []);
 
     const fetchProducts = async () => {
@@ -40,6 +42,18 @@ const Products = () => {
             setError('Failed to load products. Please try again.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchSuppliers = async () => {
+        try {
+            const token = localStorage.getItem('inventory_token');
+            const response = await axios.get('/api/suppliers', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setSuppliersList(response.data);
+        } catch (err) {
+            console.error('Error fetching suppliers:', err);
         }
     };
 
@@ -300,15 +314,20 @@ const Products = () => {
                                 </div>
                             </div>
                             <div className="input-group">
-                                <label>Purchased From</label>
-                                <input
-                                    type="text"
+                                <label>Purchased From (Supplier)</label>
+                                <select
                                     className="input-field"
                                     name="purchased_from"
                                     value={formData.purchased_from}
                                     onChange={handleFormChange}
-                                    placeholder="Supplier name or address"
-                                />
+                                >
+                                    <option value="">-- Select Supplier --</option>
+                                    {suppliersList.map(s => (
+                                        <option key={s.id} value={s.name}>
+                                            {s.name} {s.company_name ? `(${s.company_name})` : ''}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div className="modal-footer">

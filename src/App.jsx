@@ -5,6 +5,7 @@ import Products from './pages/Products';
 import Buyers from './pages/Buyers';
 import Suppliers from './pages/Suppliers';
 import Billing from './pages/Billing';
+import RecentSales from './pages/RecentSales';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
             <Route path="buyers" element={<Buyers />} />
             <Route path="suppliers" element={<Suppliers />} />
             <Route path="billing" element={<Billing />} />
+            <Route path="sales" element={<RecentSales />} />
           </Route>
         </Route>
       </Routes>
