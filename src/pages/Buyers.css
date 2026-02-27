@@ -1,0 +1,195 @@
+.stats-row {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem 2rem;
+}
+
+.stat-icon-wrapper {
+    background: rgba(139, 92, 246, 0.15);
+    padding: 1rem;
+    border-radius: 12px;
+    box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.3);
+}
+
+.stat-icon {
+    color: var(--accent-primary);
+}
+
+.stat-label {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.table-container {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.table-header-controls {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.custom-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.custom-table th {
+    padding: 1.25rem 1.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.custom-table td {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--glass-border);
+    font-size: 0.95rem;
+    vertical-align: middle;
+}
+
+.custom-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.custom-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.custom-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.buyer-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.buyer-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--bg-tertiary), rgba(255, 255, 255, 0.1));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: var(--text-primary);
+    border: 1px solid var(--glass-border);
+}
+
+.status-pill {
+    display: inline-flex;
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.status-pill.clear {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-pill.pending {
+    background: rgba(139, 92, 246, 0.15);
+    color: var(--accent-secondary);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.status-pill.warning {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--warning);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.status-pill.high-alert {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--danger);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.font-medium {
+    font-weight: 500;
+}
+
+.font-bold {
+    font-weight: 700;
+}
+
+.text-primary {
+    color: var(--text-primary);
+}
+
+.text-secondary {
+    color: var(--text-secondary);
+}
+
+.text-muted {
+    color: var(--text-muted);
+}
+
+.text-center {
+    text-align: center;
+}
+
+.py-8 {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+.flex {
+    display: flex;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.gap-2 {
+    gap: 0.5rem;
+}
+
+.icon-btn-small {
+    padding: 0.5rem;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+    background: transparent;
+}
+
+.icon-btn-small:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}

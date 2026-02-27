@@ -1,0 +1,40 @@
+/* Bringing over table and stat styles from Buyers.css */
+@import './Buyers.css';
+
+/* Supplemental Supplier-Specific Styles */
+.supplier-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.supplier-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(245, 158, 11, 0.1));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--danger);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.danger-glow {
+    background: rgba(239, 68, 68, 0.15) !important;
+    box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.3) !important;
+}
+
+.stat-icon-danger {
+    color: var(--danger) !important;
+}
+
+.text-danger {
+    color: var(--danger) !important;
+}
+
+.status-pill.overdue {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--danger);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
