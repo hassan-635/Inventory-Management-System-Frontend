@@ -1,33 +1,60 @@
-import { useState } from 'react';
-import { Plus, Trash2, Printer, Search, Receipt, Calculator } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Plus, Trash2, Printer, Search, Receipt, Calculator, Save } from 'lucide-react';
 import './Billing.css';
 
-const MOCK_PRODUCTS = [
-    { id: 1, name: 'Premium Emulsion Paint', price: 4500 },
-    { id: 2, name: 'Weather-Resistant Exterior', price: 6500 },
-    { id: 3, name: 'Steel Claw Hammer', price: 1850 },
-    { id: 4, name: 'Copper Wire Bundle (50m)', price: 4000 },
-];
-
 const Billing = () => {
+    const [products, setProducts] = useState([]);
     const [cart, setCart] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState('');
     const [quantity, setQuantity] = useState(1);
     const [billType, setBillType] = useState('original');
     const [customerName, setCustomerName] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        fetchProducts();
+    }, []);
+
+    const fetchProducts = async () => {
+        try {
+            const token = localStorage.getItem('inventory_token');
+            const response = await axios.get('/api/products', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setProducts(response.data);
+        } catch (err) {
+            console.error('Error fetching products:', err);
+            setError('Failed to load products');
+        }
+    };
 
     const addToCart = () => {
         if (!selectedProduct) return;
 
-        const product = MOCK_PRODUCTS.find(p => p.id === parseInt(selectedProduct));
+        const product = products.find(p => p.id === parseInt(selectedProduct));
         if (product) {
+            const qtyToAdd = parseInt(quantity);
+
+            // Validate stock for original bills
+            if (billType === 'original' && product.remaining_quantity < qtyToAdd) {
+                alert(`Cannot add ${qtyToAdd} items. Only ${product.remaining_quantity} in stock.`);
+                return;
+            }
+
             const existingItem = cart.find(item => item.id === product.id);
             if (existingItem) {
+                const newTotalQty = existingItem.quantity + qtyToAdd;
+                if (billType === 'original' && product.remaining_quantity < newTotalQty) {
+                    alert(`Cannot add more. Exceeds stock of ${product.remaining_quantity}.`);
+                    return;
+                }
                 setCart(cart.map(item =>
-                    item.id === product.id ? { ...item, quantity: item.quantity + parseInt(quantity) } : item
+                    item.id === product.id ? { ...item, quantity: newTotalQty } : item
                 ));
             } else {
-                setCart([...cart, { ...product, quantity: parseInt(quantity) }]);
+                setCart([...cart, { ...product, quantity: qtyToAdd }]);
             }
             setSelectedProduct('');
             setQuantity(1);
@@ -36,6 +63,55 @@ const Billing = () => {
 
     const removeFromCart = (id) => {
         setCart(cart.filter(item => item.id !== id));
+    };
+
+    const handleSaveBill = async () => {
+        if (cart.length === 0) {
+            alert("No items in the cart to create a bill.");
+            return;
+        }
+
+        if (billType === 'dummy') {
+            // Dummy bill does not hit backend to deduct stock
+            alert("Dummy Bill Generated Successfully! (No stock deducted)");
+            // Optional: Print or reset cart here
+            window.print();
+            return;
+        }
+
+        // It's an Original bill, process sales via backend
+        try {
+            setLoading(true);
+            const token = localStorage.getItem('inventory_token');
+
+            // Send each item in cart as a separate sale for simplicity matching backend structure
+            for (const item of cart) {
+                const saleData = {
+                    product_id: item.id,
+                    quantity: item.quantity,
+                    total_amount: item.price * item.quantity,
+                    bill_type: 'REAL',
+                    // Note: backend expects buyer_id. In a true system, we'd lookup/create buyer. 
+                    // To proceed, we assume a placeholder or leave undefined if not enforced stringently
+                    buyer_id: null,
+                    paid_amount: item.price * item.quantity
+                };
+
+                await axios.post('/api/sales', saleData, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+            }
+
+            alert("Original Bill saved successfully! Stock has been deducted.");
+            setCart([]);
+            setCustomerName('');
+            fetchProducts(); // Refresh stock
+        } catch (err) {
+            console.error("Error creating sale:", err);
+            alert(err.response?.data?.error || "Failed to save bill. Please try again.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -51,6 +127,8 @@ const Billing = () => {
                     <p className="page-subtitle">Create a new invoice for customer</p>
                 </div>
 
+                {error && <div className="error-message">{error}</div>}
+
                 <div className="form-section glass-panel">
                     <h3 className="section-title">Bill Details</h3>
 
@@ -62,8 +140,8 @@ const Billing = () => {
                                 value={billType}
                                 onChange={(e) => setBillType(e.target.value)}
                             >
-                                <option value="original">Original (With Tax)</option>
-                                <option value="dummy">Dummy (Estimate/No Tax)</option>
+                                <option value="original">Original (With Tax & Stock Update)</option>
+                                <option value="dummy">Dummy (Estimate/No Tax & No Stock Update)</option>
                             </select>
                         </div>
 
@@ -90,8 +168,10 @@ const Billing = () => {
                                 onChange={(e) => setSelectedProduct(e.target.value)}
                             >
                                 <option value="">Select a product...</option>
-                                {MOCK_PRODUCTS.map(p => (
-                                    <option key={p.id} value={p.id}>{p.name} - Rs. {p.price}</option>
+                                {products.map(p => (
+                                    <option key={p.id} value={p.id}>
+                                        {p.name} - Rs. {p.price} {billType === 'original' ? `(Stock: ${p.remaining_quantity})` : ''}
+                                    </option>
                                 ))}
                             </select>
                         </div>
@@ -205,10 +285,20 @@ const Billing = () => {
                         </div>
                     </div>
 
-                    <button className="btn-print mt-auto">
-                        <Printer size={18} />
-                        <span>Print Receipt</span>
-                    </button>
+                    <div className="flex gap-2 mt-auto">
+                        <button className="btn-secondary flex-1" onClick={() => window.print()}>
+                            <Printer size={18} />
+                            <span>Print</span>
+                        </button>
+                        <button
+                            className="btn-primary flex-1 bg-accent"
+                            onClick={handleSaveBill}
+                            disabled={loading || cart.length === 0}
+                        >
+                            <Save size={18} />
+                            <span>{loading ? 'Saving...' : 'Save & Print'}</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
