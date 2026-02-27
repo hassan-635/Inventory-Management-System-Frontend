@@ -161,13 +161,16 @@ const RecentSales = () => {
                         <thead>
                             <tr>
                                 <th>#</th>
+                                <th>Date</th>
                                 <th>Product</th>
+                                <th>Price</th>
+                                <th>Supplier</th>
                                 <th>Buyer</th>
                                 <th>Qty</th>
                                 <th>Total Amount</th>
                                 <th>Paid</th>
                                 <th>Pending</th>
-                                <th>Date</th>
+                                <th>Salesman</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -176,15 +179,21 @@ const RecentSales = () => {
                                 return (
                                     <tr key={sale.id} className="animate-fade-in">
                                         <td>{idx + 1}</td>
+                                        <td>{sale.purchase_date ? new Date(sale.purchase_date).toLocaleDateString() : '-'}</td>
                                         <td className="font-medium">{sale.products?.name || '-'}</td>
-                                        <td>{sale.buyers?.name || 'Cash Sale'}</td>
+                                        <td>Rs. {Number(sale.products?.price || 0).toLocaleString()}</td>
+                                        <td>{sale.products?.purchased_from || '-'}</td>
+                                        <td>
+                                            <div>{sale.buyers?.name || 'Cash Sale'}</div>
+                                            {sale.buyers?.phone && <div style={{ fontSize: '0.8em', color: '#888', marginTop: '2px' }}>{sale.buyers.phone}</div>}
+                                        </td>
                                         <td>{sale.quantity}</td>
                                         <td>Rs. {Number(sale.total_amount).toLocaleString()}</td>
                                         <td style={{ color: '#22c55e' }}>Rs. {Number(sale.paid_amount).toLocaleString()}</td>
                                         <td style={{ color: pending > 0 ? '#ef4444' : '#22c55e', fontWeight: 600 }}>
                                             {pending > 0 ? `Rs. ${pending.toLocaleString()}` : '✓ Paid'}
                                         </td>
-                                        <td>{sale.purchase_date ? new Date(sale.purchase_date).toLocaleDateString() : '-'}</td>
+                                        <td>{sale.users?.name || '-'}</td>
                                     </tr>
                                 );
                             })}

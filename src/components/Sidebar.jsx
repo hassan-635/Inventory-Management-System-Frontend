@@ -1,9 +1,29 @@
-import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Truck, FileText, Package, BarChart3 } from 'lucide-react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Users, Truck, FileText, Package, BarChart3, LogOut } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import './Sidebar.css';
 
 const Sidebar = () => {
     const location = useLocation();
+    const navigate = useNavigate();
+    const [user, setUser] = useState({ name: 'Salesman', email: 'user@example.com' });
+
+    useEffect(() => {
+        const storedUser = localStorage.getItem('inventory_user');
+        if (storedUser) {
+            try {
+                setUser(JSON.parse(storedUser));
+            } catch (e) {
+                console.error("Error parsing user data");
+            }
+        }
+    }, []);
+
+    const handleLogout = () => {
+        localStorage.removeItem('inventory_token');
+        localStorage.removeItem('inventory_user');
+        navigate('/login', { replace: true });
+    };
 
     const navItems = [
         { path: '/products', name: 'Products', icon: <Package size={20} /> },
@@ -40,12 +60,40 @@ const Sidebar = () => {
 
             <div className="sidebar-footer">
                 <div className="user-profile">
-                    <div className="avatar">RM</div>
+                    <div className="avatar">{user.name ? user.name.substring(0, 2).toUpperCase() : 'US'}</div>
                     <div className="user-info">
-                        <p className="user-name">Salesman</p>
-                        <p className="user-role">Retail Mode</p>
+                        <p className="user-name" style={{ fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '120px' }} title={user.name}>{user.name}</p>
+                        <p className="user-role" style={{ fontSize: '0.75rem', color: '#888', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '120px' }} title={user.email}>{user.email}</p>
                     </div>
                 </div>
+                <button
+                    onClick={handleLogout}
+                    className="logout-btn"
+                    style={{
+                        marginTop: '1rem',
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        padding: '10px',
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        color: '#ef4444',
+                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                    }}
+                    onMouseOver={(e) => {
+                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
+                    }}
+                    onMouseOut={(e) => {
+                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                    }}
+                >
+                    <LogOut size={18} />
+                    <span>Logout</span>
+                </button>
             </div>
         </aside>
     );
