@@ -36,6 +36,7 @@ const Billing = () => {
 
     const addToCart = () => {
         if (!selectedProduct) return;
+        setError(null); // Clear previous errors
 
         const product = products.find(p => String(p.id) === String(selectedProduct));
         if (product) {
@@ -43,7 +44,7 @@ const Billing = () => {
 
             // Validate stock for original and udhaar bills (both are real sales)
             if (billType !== 'dummy' && product.remaining_quantity < qtyToAdd) {
-                alert(`Cannot add ${qtyToAdd} items. Only ${product.remaining_quantity} in stock.`);
+                setError(`Notification: Cannot add ${qtyToAdd} items. Only ${product.remaining_quantity} in stock.`);
                 return;
             }
 
@@ -51,7 +52,7 @@ const Billing = () => {
             if (existingItem) {
                 const newTotalQty = existingItem.quantity + qtyToAdd;
                 if (billType !== 'dummy' && product.remaining_quantity < newTotalQty) {
-                    alert(`Cannot add more. Exceeds stock of ${product.remaining_quantity}.`);
+                    setError(`Notification: Cannot add more. Exceeds stock limit of ${product.remaining_quantity}.`);
                     return;
                 }
                 setCart(cart.map(item =>

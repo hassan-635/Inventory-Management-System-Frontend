@@ -9,6 +9,7 @@ const Products = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [activeCategory, setActiveCategory] = useState('All');
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -16,6 +17,7 @@ const Products = () => {
     const [formData, setFormData] = useState({
         id: null,
         name: '',
+        category: '',
         price: '',
         max_discount: '',
         purchased_from: '',
@@ -77,6 +79,7 @@ const Products = () => {
         setFormData({
             id: null,
             name: '',
+            category: '',
             price: '',
             max_discount: '',
             purchased_from: '',
@@ -91,6 +94,7 @@ const Products = () => {
         setFormData({
             id: product.id,
             name: product.name,
+            category: product.category || '',
             price: product.price,
             max_discount: product.max_discount || '',
             purchased_from: product.purchased_from || '',
@@ -141,8 +145,11 @@ const Products = () => {
 
     const filteredProducts = products.filter(product => {
         const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesSearch;
+        const matchesCategory = activeCategory === 'All' || product.category === activeCategory;
+        return matchesSearch && matchesCategory;
     });
+
+    const categories = ['All', 'Paint', 'Electric', 'Hardware'];
 
     return (
         <div className="page-container">
@@ -169,7 +176,26 @@ const Products = () => {
                     />
                 </div>
 
-                <div className="flex-1"></div>
+                <div className="category-tabs flex-1" style={{ display: 'flex', gap: '10px', marginLeft: '20px' }}>
+                    {categories.map(cat => (
+                        <button
+                            key={cat}
+                            onClick={() => setActiveCategory(cat)}
+                            className={`category-tab ${activeCategory === cat ? 'active' : ''}`}
+                            style={{
+                                padding: '6px 16px',
+                                borderRadius: '20px',
+                                border: '1px solid var(--border-color)',
+                                backgroundColor: activeCategory === cat ? 'var(--accent-primary)' : 'transparent',
+                                color: activeCategory === cat ? '#fff' : 'var(--text-secondary)',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            {cat}
+                        </button>
+                    ))}
+                </div>
 
                 <button className="icon-btn" title="Filter options">
                     <SlidersHorizontal size={20} />
@@ -193,6 +219,7 @@ const Products = () => {
                             <tr>
                                 <th>ID</th>
                                 <th>Name</th>
+                                <th>Category</th>
                                 <th>Price</th>
                                 <th>Max Discount</th>
                                 <th>Purchased From</th>
@@ -207,6 +234,11 @@ const Products = () => {
                                 <tr key={product.id} className="animate-fade-in">
                                     <td>{product.id}</td>
                                     <td className="font-medium">{product.name}</td>
+                                    <td>
+                                        <span className="badge" style={{ backgroundColor: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem' }}>
+                                            {product.category || 'Uncategorized'}
+                                        </span>
+                                    </td>
                                     <td>Rs. {product.price}</td>
                                     <td>{product.max_discount ? `Rs. ${product.max_discount}` : '-'}</td>
                                     <td>{product.purchased_from || '-'}</td>
@@ -253,16 +285,33 @@ const Products = () => {
                             </button>
                         </div>
                         <form onSubmit={handleFormSubmit} className="modal-body">
-                            <div className="input-group">
-                                <label>Name</label>
-                                <input
-                                    type="text"
-                                    className="input-field"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleFormChange}
-                                    required
-                                />
+                            <div className="form-grid">
+                                <div className="input-group">
+                                    <label>Name</label>
+                                    <input
+                                        type="text"
+                                        className="input-field"
+                                        name="name"
+                                        value={formData.name}
+                                        onChange={handleFormChange}
+                                        required
+                                    />
+                                </div>
+                                <div className="input-group">
+                                    <label>Category</label>
+                                    <select
+                                        className="input-field minimal-select"
+                                        name="category"
+                                        value={formData.category}
+                                        onChange={handleFormChange}
+                                        required
+                                    >
+                                        <option value="">-- Select Category --</option>
+                                        <option value="Paint">Paint</option>
+                                        <option value="Electric">Electric</option>
+                                        <option value="Hardware">Hardware</option>
+                                    </select>
+                                </div>
                             </div>
                             <div className="form-grid">
                                 <div className="input-group">
