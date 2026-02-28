@@ -14,12 +14,15 @@ const Buyers = () => {
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState('add');
+    const [productSearch, setProductSearch] = useState('');
+    const [showProductDropdown, setShowProductDropdown] = useState(false);
     const [formData, setFormData] = useState({
         id: null,
         name: '',
         phone: '',
         address: '',
         product_id: '',
+        product_name: '',
         quantity: '',
         total_amount: '',
         paid_amount: '',
@@ -92,12 +95,15 @@ const Buyers = () => {
 
     const openAddModal = () => {
         setModalMode('add');
+        setProductSearch('');
+        setShowProductDropdown(false);
         setFormData({
             id: null,
             name: '',
             phone: '',
             address: '',
             product_id: '',
+            product_name: '',
             quantity: '',
             total_amount: '',
             paid_amount: '0',
@@ -126,6 +132,17 @@ const Buyers = () => {
 
     const closeModal = () => {
         setIsModalOpen(false);
+        setShowProductDropdown(false);
+    };
+
+    const handleProductSelect = (product) => {
+        setProductSearch(product.name);
+        setFormData(prev => ({
+            ...prev,
+            product_id: product.id,
+            product_name: product.name,
+        }));
+        setShowProductDropdown(false);
     };
 
     const handleFormChange = (e) => {
@@ -388,19 +405,37 @@ const Buyers = () => {
                                     <div className="form-grid">
                                         <div className="input-group">
                                             <label>Select Product</label>
-                                            <select
-                                                className="input-field"
-                                                name="product_id"
-                                                value={formData.product_id}
-                                                onChange={handleFormChange}
-                                            >
-                                                <option value="">-- Choose Product --</option>
-                                                {productsList.map(p => (
-                                                    <option key={p.id} value={p.id}>
-                                                        {p.name} (Qty: {p.remaining_quantity})
-                                                    </option>
-                                                ))}
-                                            </select>
+                                            <div className="custom-searchable-dropdown">
+                                                <input
+                                                    type="text"
+                                                    className="input-field"
+                                                    placeholder="Search or enter product..."
+                                                    value={productSearch}
+                                                    onChange={(e) => {
+                                                        setProductSearch(e.target.value);
+                                                        setShowProductDropdown(true);
+                                                    }}
+                                                    onClick={() => setShowProductDropdown(true)}
+                                                />
+                                                {showProductDropdown && (
+                                                    <div className="dropdown-options glass-panel">
+                                                        {productsList
+                                                            .filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()))
+                                                            .map(p => (
+                                                                <div
+                                                                    key={p.id}
+                                                                    className="dropdown-option"
+                                                                    onClick={() => handleProductSelect(p)}
+                                                                >
+                                                                    {p.name} <span style={{ fontSize: '0.8em', color: 'var(--text-muted)' }}>(Qty: {p.remaining_quantity})</span>
+                                                                </div>
+                                                            ))}
+                                                        {productsList.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase())).length === 0 && (
+                                                            <div className="dropdown-option text-muted">No products found</div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="input-group">
                                             <label>Quantity</label>
