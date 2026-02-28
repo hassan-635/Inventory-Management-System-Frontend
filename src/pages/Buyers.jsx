@@ -160,6 +160,8 @@ const Buyers = () => {
                 address: formData.address
             };
 
+            const finalProductName = formData.product_name || productSearch;
+
             if (modalMode === 'add') {
                 const buyerRes = await axios.post('/api/buyers', payload, {
                     headers: { Authorization: `Bearer ${token}` }
@@ -168,10 +170,11 @@ const Buyers = () => {
                 const newBuyer = buyerRes.data.data?.[0];
 
                 // If product is selected, create a credit sale transaction
-                if (newBuyer && formData.product_id && Number(formData.quantity) > 0) {
+                if (newBuyer && (formData.product_id || finalProductName) && Number(formData.quantity) > 0) {
                     const salePayload = {
                         buyer_id: newBuyer.id,
-                        product_id: formData.product_id,
+                        product_id: formData.product_id || null,
+                        product_name: finalProductName,
                         quantity: Number(formData.quantity),
                         total_amount: Number(formData.total_amount),
                         paid_amount: Number(formData.paid_amount || 0),

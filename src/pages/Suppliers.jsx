@@ -213,8 +213,10 @@ const Suppliers = () => {
                 company_name: formData.company_name
             };
 
+            const finalProductName = formData.product_name || productSearch;
+
             if (modalMode === 'add') {
-                if (formData.product_id && Number(formData.quantity) > 0) {
+                if ((formData.product_id || finalProductName) && Number(formData.quantity) > 0) {
                     if (Number(formData.paid_amount || 0) > Number(formData.total_amount)) {
                         alert("Paid amount cannot exceed total amount.");
                         return;
@@ -230,10 +232,11 @@ const Suppliers = () => {
 
                 const newSupplier = supplierRes.data.data?.[0];
 
-                if (newSupplier && formData.product_id && Number(formData.quantity) > 0) {
+                if (newSupplier && (formData.product_id || finalProductName) && Number(formData.quantity) > 0) {
                     const purchasePayload = {
                         supplier_id: newSupplier.id,
-                        product_id: formData.product_id,
+                        product_id: formData.product_id || null,
+                        product_name: finalProductName,
                         quantity: Number(formData.quantity),
                         total_amount: Number(formData.total_amount),
                         paid_amount: Number(formData.paid_amount || 0),
@@ -285,7 +288,7 @@ const Suppliers = () => {
                             headers: { Authorization: `Bearer ${token}` }
                         });
                     }
-                } else if (formData.product_id && Number(formData.quantity) > 0) {
+                } else if ((formData.product_id || finalProductName) && Number(formData.quantity) > 0) {
                     // User is adding their first transaction via the Edit modal
                     if (Number(formData.paid_amount || 0) > Number(formData.total_amount)) {
                         alert("Paid amount cannot exceed total amount.");
@@ -298,7 +301,8 @@ const Suppliers = () => {
 
                     const purchasePayload = {
                         supplier_id: formData.id,
-                        product_id: formData.product_id,
+                        product_id: formData.product_id || null,
+                        product_name: finalProductName,
                         quantity: Number(formData.quantity),
                         total_amount: Number(formData.total_amount),
                         paid_amount: Number(formData.paid_amount || 0),
