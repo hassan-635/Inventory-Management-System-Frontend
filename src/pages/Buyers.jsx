@@ -83,7 +83,7 @@ const Buyers = () => {
             await axios.delete(`/api/buyers/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setBuyers(buyers.filter(b => b.id !== id));
+            fetchBuyers();
         } catch (err) {
             console.error('Error deleting buyer:', err);
             alert('Failed to delete buyer.');

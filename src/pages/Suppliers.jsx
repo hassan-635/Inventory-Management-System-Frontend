@@ -87,7 +87,7 @@ const Suppliers = () => {
             await axios.delete(`/api/suppliers/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setSuppliers(suppliers.filter(s => s.id !== id));
+            fetchSuppliers();
         } catch (err) {
             console.error('Error deleting supplier:', err);
             alert('Failed to delete supplier.');

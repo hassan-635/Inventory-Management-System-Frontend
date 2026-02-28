@@ -68,7 +68,7 @@ const Products = () => {
             await axios.delete(`/api/products/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setProducts(products.filter(p => p.id !== id));
+            fetchProducts();
         } catch (err) {
             console.error('Error deleting product:', err);
             alert('Failed to delete product.');

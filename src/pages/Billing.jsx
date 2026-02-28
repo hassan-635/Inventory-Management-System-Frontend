@@ -230,7 +230,7 @@ const Billing = () => {
                                 onChange={(e) => setSelectedProduct(e.target.value)}
                             >
                                 <option value="">Select a product...</option>
-                                {products.map(p => (
+                                {products.filter(p => billType === 'dummy' || (p.remaining_quantity && p.remaining_quantity >= 1)).map(p => (
                                     <option key={p.id} value={p.id}>
                                         [{p.category || 'NA'}] {p.name} - Rs. {p.price} {billType !== 'dummy' ? `(Stock: ${p.remaining_quantity})` : ''}
                                     </option>
