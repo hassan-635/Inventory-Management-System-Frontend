@@ -232,7 +232,7 @@ const Billing = () => {
                                 <option value="">Select a product...</option>
                                 {products.map(p => (
                                     <option key={p.id} value={p.id}>
-                                        {p.name} - Rs. {p.price} {billType !== 'dummy' ? `(Stock: ${p.remaining_quantity})` : ''}
+                                        [{p.category || 'NA'}] {p.name} - Rs. {p.price} {billType !== 'dummy' ? `(Stock: ${p.remaining_quantity})` : ''}
                                     </option>
                                 ))}
                             </select>
