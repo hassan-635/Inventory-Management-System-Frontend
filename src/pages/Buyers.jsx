@@ -23,7 +23,10 @@ const Buyers = () => {
         quantity: '',
         total_amount: '',
         paid_amount: '',
-        purchase_date: new Date().toISOString().split('T')[0]
+        purchase_date: new Date().toISOString().split('T')[0],
+        txn_id: null,
+        add_payment: '',
+        remaining_amount: 0
     });
 
     useEffect(() => {
@@ -98,21 +101,25 @@ const Buyers = () => {
             quantity: '',
             total_amount: '',
             paid_amount: '0',
-            purchase_date: new Date().toISOString().split('T')[0]
+            purchase_date: new Date().toISOString().split('T')[0],
+            txn_id: null,
+            add_payment: '',
+            remaining_amount: 0
         });
         setIsModalOpen(true);
     };
 
-    const openEditModal = (buyer, _txn = null) => {
-        // Edit mode is disabled or constrained typically due to complex relations, 
-        // but let's just prefill buyer data. For Udhaar, usually a generic payment form is better.
-        // We'll leave this simple for now.
+    const openEditModal = (row) => {
+        const { txn } = row;
         setModalMode('edit');
         setFormData({
-            id: buyer.id,
-            name: buyer.name,
-            phone: buyer.phone || '',
-            address: buyer.address || ''
+            id: row.id,
+            name: row.name,
+            phone: row.phone || '',
+            address: row.address || '',
+            txn_id: txn ? txn.id : null,
+            add_payment: '',
+            remaining_amount: txn ? (Number(txn.total_amount || 0) - Number(txn.paid_amount || 0)) : 0
         });
         setIsModalOpen(true);
     };
@@ -159,6 +166,19 @@ const Buyers = () => {
                     });
                 }
             } else {
+                if (formData.txn_id && formData.add_payment && Number(formData.add_payment) > 0) {
+                    if (Number(formData.add_payment) > Number(formData.remaining_amount)) {
+                        alert("Cannot pay more than remaining credit amount.");
+                        return;
+                    }
+                    // Update the transaction parallel to buyer update
+                    await axios.put(`/api/sales/${formData.txn_id}`, {
+                        add_payment: Number(formData.add_payment)
+                    }, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                }
+
                 await axios.put(`/api/buyers/${formData.id}`, payload, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -285,7 +305,7 @@ const Buyers = () => {
                                                 <div className="action-buttons flex gap-2">
                                                     <button
                                                         className="icon-btn-small text-accent"
-                                                        title="Edit Buyer Details"
+                                                        title="Edit / Add Payment"
                                                         onClick={() => openEditModal(row)}
                                                     >
                                                         <Edit size={16} />
@@ -429,6 +449,38 @@ const Buyers = () => {
                                             value={formData.purchase_date}
                                             onChange={handleFormChange}
                                         />
+                                    </div>
+                                </>
+                            )}
+
+                            {modalMode === 'edit' && formData.txn_id && (
+                                <>
+                                    <hr className="my-4 border-gray-700" />
+                                    <h3 className="text-lg font-medium text-gray-200 mb-4">Update Payment</h3>
+                                    <div className="form-grid">
+                                        <div className="input-group">
+                                            <label>Remaining Amount (Rs)</label>
+                                            <input
+                                                type="text"
+                                                className="input-field"
+                                                value={formData.remaining_amount}
+                                                disabled
+                                                style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-muted)' }}
+                                            />
+                                        </div>
+                                        <div className="input-group">
+                                            <label>Add New Payment (Rs)</label>
+                                            <input
+                                                type="number"
+                                                className="input-field"
+                                                name="add_payment"
+                                                value={formData.add_payment}
+                                                onChange={handleFormChange}
+                                                min="0"
+                                                max={formData.remaining_amount}
+                                                placeholder="Amount to pay..."
+                                            />
+                                        </div>
                                     </div>
                                 </>
                             )}

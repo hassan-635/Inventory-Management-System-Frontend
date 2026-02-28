@@ -22,7 +22,8 @@ const Products = () => {
         max_discount: '',
         purchased_from: '',
         purchase_date: '',
-        total_quantity: ''
+        total_quantity: '',
+        add_quantity: ''
     });
 
     useEffect(() => {
@@ -84,7 +85,8 @@ const Products = () => {
             max_discount: '',
             purchased_from: '',
             purchase_date: new Date().toISOString().split('T')[0],
-            total_quantity: ''
+            total_quantity: '',
+            add_quantity: ''
         });
         setIsModalOpen(true);
     };
@@ -99,7 +101,8 @@ const Products = () => {
             max_discount: product.max_discount || '',
             purchased_from: product.purchased_from || '',
             purchase_date: product.purchase_date ? new Date(product.purchase_date).toISOString().split('T')[0] : '',
-            total_quantity: product.total_quantity
+            total_quantity: product.total_quantity,
+            add_quantity: ''
         });
         setIsModalOpen(true);
     };
@@ -122,6 +125,7 @@ const Products = () => {
                 price: parseFloat(formData.price),
                 max_discount: formData.max_discount ? parseFloat(formData.max_discount) : null,
                 total_quantity: parseInt(formData.total_quantity, 10),
+                add_quantity: formData.add_quantity ? parseInt(formData.add_quantity, 10) : 0,
             };
 
             if (modalMode === 'add') {
@@ -327,7 +331,7 @@ const Products = () => {
                                     />
                                 </div>
                                 <div className="input-group">
-                                    <label>Total Quantity</label>
+                                    <label>{modalMode === 'add' ? 'Total Quantity' : 'Current Total Quantity'}</label>
                                     <input
                                         type="number"
                                         className="input-field"
@@ -336,8 +340,24 @@ const Products = () => {
                                         onChange={handleFormChange}
                                         min="1"
                                         required
+                                        disabled={modalMode === 'edit'}
+                                        style={modalMode === 'edit' ? { backgroundColor: 'var(--bg-secondary)', color: 'var(--text-muted)' } : {}}
                                     />
                                 </div>
+                                {modalMode === 'edit' && (
+                                    <div className="input-group">
+                                        <label>Add Quantity (+)</label>
+                                        <input
+                                            type="number"
+                                            className="input-field"
+                                            name="add_quantity"
+                                            value={formData.add_quantity}
+                                            onChange={handleFormChange}
+                                            min="0"
+                                            placeholder="Leave empty to not change"
+                                        />
+                                    </div>
+                                )}
                             </div>
                             <div className="form-grid">
                                 <div className="input-group">

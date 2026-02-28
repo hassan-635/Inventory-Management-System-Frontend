@@ -23,7 +23,11 @@ const Suppliers = () => {
         quantity: '',
         total_amount: '',
         paid_amount: '',
-        purchase_date: new Date().toISOString().split('T')[0]
+        purchase_date: new Date().toISOString().split('T')[0],
+        txn_id: null,
+        add_payment: '',
+        new_total_amount: '',
+        remaining_amount: 0
     });
 
     useEffect(() => {
@@ -98,18 +102,27 @@ const Suppliers = () => {
             quantity: '',
             total_amount: '',
             paid_amount: '0',
-            purchase_date: new Date().toISOString().split('T')[0]
+            purchase_date: new Date().toISOString().split('T')[0],
+            txn_id: null,
+            add_payment: '',
+            new_total_amount: '',
+            remaining_amount: 0
         });
         setIsModalOpen(true);
     };
 
-    const openEditModal = (supplier) => {
+    const openEditModal = (row) => {
+        const { txn } = row;
         setModalMode('edit');
         setFormData({
-            id: supplier.id,
-            name: supplier.name,
-            phone: supplier.phone || '',
-            company_name: supplier.company_name || ''
+            id: row.id,
+            name: row.name,
+            phone: row.phone || '',
+            company_name: row.company_name || '',
+            txn_id: txn ? txn.id : null,
+            add_payment: '',
+            new_total_amount: txn ? txn.total_amount : '',
+            remaining_amount: txn ? (Number(txn.total_amount || 0) - Number(txn.paid_amount || 0)) : 0
         });
         setIsModalOpen(true);
     };
@@ -155,6 +168,22 @@ const Suppliers = () => {
                     });
                 }
             } else {
+                if (formData.txn_id) {
+                    const updatePayload = {};
+                    if (formData.add_payment && Number(formData.add_payment) > 0) {
+                        updatePayload.add_payment = Number(formData.add_payment);
+                    }
+                    if (formData.new_total_amount && Number(formData.new_total_amount) >= 0) {
+                        updatePayload.new_total_amount = Number(formData.new_total_amount);
+                    }
+
+                    if (Object.keys(updatePayload).length > 0) {
+                        await axios.put(`/api/purchases/${formData.txn_id}`, updatePayload, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                    }
+                }
+
                 await axios.put(`/api/suppliers/${formData.id}`, payload, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -285,7 +314,7 @@ const Suppliers = () => {
                                                 <div className="action-buttons flex gap-2">
                                                     <button
                                                         className="icon-btn-small text-accent"
-                                                        title="Edit Supplier"
+                                                        title="Edit / Update Payment"
                                                         onClick={() => openEditModal(row)}
                                                     >
                                                         <Edit size={16} />
@@ -430,6 +459,39 @@ const Suppliers = () => {
                                             value={formData.purchase_date}
                                             onChange={handleFormChange}
                                         />
+                                    </div>
+                                </>
+                            )}
+
+                            {modalMode === 'edit' && formData.txn_id && (
+                                <>
+                                    <hr className="my-4 border-gray-700" />
+                                    <h3 className="text-lg font-medium text-gray-200 mb-4">Update Payment / Total</h3>
+                                    <div className="form-grid">
+                                        <div className="input-group">
+                                            <label>Update Total Amount (Rs)</label>
+                                            <input
+                                                type="number"
+                                                className="input-field"
+                                                name="new_total_amount"
+                                                value={formData.new_total_amount}
+                                                onChange={handleFormChange}
+                                                min="0"
+                                                placeholder="New Total Amount..."
+                                            />
+                                        </div>
+                                        <div className="input-group">
+                                            <label>Add New Payment (Rs)</label>
+                                            <input
+                                                type="number"
+                                                className="input-field"
+                                                name="add_payment"
+                                                value={formData.add_payment}
+                                                onChange={handleFormChange}
+                                                min="0"
+                                                placeholder="Amount to pay..."
+                                            />
+                                        </div>
                                     </div>
                                 </>
                             )}
