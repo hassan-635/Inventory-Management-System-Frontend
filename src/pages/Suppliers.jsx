@@ -14,12 +14,15 @@ const Suppliers = () => {
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState('add');
+    const [productSearch, setProductSearch] = useState('');
+    const [showProductDropdown, setShowProductDropdown] = useState(false);
     const [formData, setFormData] = useState({
         id: null,
         name: '',
         phone: '',
         company_name: '',
         product_id: '',
+        product_name: '',
         quantity: '',
         total_amount: '',
         paid_amount: '',
@@ -96,12 +99,15 @@ const Suppliers = () => {
 
     const openAddModal = () => {
         setModalMode('add');
+        setProductSearch('');
+        setShowProductDropdown(false);
         setFormData({
             id: null,
             name: '',
             phone: '',
             company_name: '',
             product_id: '',
+            product_name: '',
             quantity: '',
             total_amount: '',
             paid_amount: '0',
@@ -119,25 +125,40 @@ const Suppliers = () => {
 
     const openEditModal = (row) => {
         const { txn } = row;
+        // If txn is null, they have no transactions yet. We'll show the add fields for them
+        // by pretending it's an edit but with empty transaction fields so they can add one.
         setModalMode('edit');
+        setProductSearch('');
+        setShowProductDropdown(false);
         setFormData({
             id: row.id,
             name: row.name,
             phone: row.phone || '',
             company_name: row.company_name || '',
+
+            // For adding new txn if none existed
+            product_id: '',
+            product_name: '',
+            quantity: '',
+            total_amount: '',
+            paid_amount: '0',
+            purchase_date: new Date().toISOString().split('T')[0],
+            unit_price: '',
+
+            // For editing existing txn
             txn_id: txn ? txn.id : null,
             add_payment: '',
             new_total_amount: txn ? txn.total_amount : '',
             remaining_amount: txn ? (Number(txn.total_amount || 0) - Number(txn.paid_amount || 0)) : 0,
             txn_paid_amount: txn ? (Number(txn.paid_amount || 0)) : 0,
             txn_total_amount: txn ? (Number(txn.total_amount || 0)) : 0,
-            unit_price: ''
         });
         setIsModalOpen(true);
     };
 
     const closeModal = () => {
         setIsModalOpen(false);
+        setShowProductDropdown(false);
     };
 
     const handleFormChange = (e) => {
@@ -146,29 +167,40 @@ const Suppliers = () => {
         setFormData(prev => {
             const newData = { ...prev, [name]: value };
 
-            if (modalMode === 'add') {
-                // Pre-fill unit_price when product is selected
-                if (name === 'product_id') {
-                    const selectedProduct = productsList.find(p => p.id === parseInt(value));
-                    if (selectedProduct && !prev.unit_price) {
-                        newData.unit_price = selectedProduct.price;
-                    }
-                }
-
-                // Auto-calculate total_amount = unit_price × quantity
-                if (name === 'product_id' || name === 'quantity' || name === 'unit_price') {
-                    const qty = parseInt(newData.quantity);
-                    const price = Number(newData.unit_price);
-                    if (qty > 0 && price > 0) {
-                        newData.total_amount = price * qty;
-                    } else {
-                        newData.total_amount = '';
-                    }
+            // Auto-calculate total_amount = unit_price × quantity
+            // This applies to both 'add' and 'edit' (when adding a new transaction)
+            if (name === 'quantity' || name === 'unit_price') {
+                const qty = parseInt(newData.quantity);
+                const price = Number(newData.unit_price);
+                if (qty > 0 && price > 0) {
+                    newData.total_amount = price * qty;
+                } else {
+                    newData.total_amount = '';
                 }
             }
 
             return newData;
         });
+    };
+
+    const handleProductSelect = (product) => {
+        setProductSearch(product.name);
+        setFormData(prev => {
+            const newData = {
+                ...prev,
+                product_id: product.id,
+                product_name: product.name,
+                unit_price: prev.unit_price || product.price
+            };
+
+            const qty = parseInt(newData.quantity);
+            const price = Number(newData.unit_price);
+            if (qty > 0 && price > 0) {
+                newData.total_amount = price * qty;
+            }
+            return newData;
+        });
+        setShowProductDropdown(false);
     };
 
     const handleFormSubmit = async (e) => {
@@ -213,7 +245,14 @@ const Suppliers = () => {
                     });
                 }
             } else {
+                // UPDATE EXSITING SUPPLIER
+                // First update supplier basic info
+                await axios.put(`/api/suppliers/${formData.id}`, payload, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
                 if (formData.txn_id) {
+                    // Updating an existing transaction payment
                     let final_paid_amount = Number(formData.txn_paid_amount || 0);
                     let final_total_amount = Number(formData.txn_total_amount || 0);
 
@@ -246,11 +285,30 @@ const Suppliers = () => {
                             headers: { Authorization: `Bearer ${token}` }
                         });
                     }
-                }
+                } else if (formData.product_id && Number(formData.quantity) > 0) {
+                    // User is adding their first transaction via the Edit modal
+                    if (Number(formData.paid_amount || 0) > Number(formData.total_amount)) {
+                        alert("Paid amount cannot exceed total amount.");
+                        return;
+                    }
+                    if (Number(formData.paid_amount || 0) < 0 || Number(formData.total_amount) < 0 || Number(formData.quantity) <= 0) {
+                        alert("Amounts and quantity must be valid positive numbers.");
+                        return;
+                    }
 
-                await axios.put(`/api/suppliers/${formData.id}`, payload, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                    const purchasePayload = {
+                        supplier_id: formData.id,
+                        product_id: formData.product_id,
+                        quantity: Number(formData.quantity),
+                        total_amount: Number(formData.total_amount),
+                        paid_amount: Number(formData.paid_amount || 0),
+                        purchase_date: formData.purchase_date
+                    };
+
+                    await axios.post('/api/purchases', purchasePayload, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                }
             }
             fetchSuppliers();
             closeModal();
@@ -453,28 +511,48 @@ const Suppliers = () => {
                                 />
                             </div>
 
-                            {/* Only show transaction fields for Add Mode */}
-                            {modalMode === 'add' && (
+                            {/* Show transaction fields for Add Mode OR Edit Mode when no previous transaction exists */}
+                            {(modalMode === 'add' || (modalMode === 'edit' && !formData.txn_id)) && (
                                 <>
                                     <hr className="my-4 border-gray-700" />
-                                    <h3 className="text-lg font-medium text-gray-200 mb-4">Purchase / Payables Details (Optional)</h3>
+                                    <h3 className="text-lg font-medium text-gray-200 mb-4">
+                                        {modalMode === 'add' ? 'Purchase / Payables Details (Optional)' : 'Add First Purchase Transaction'}
+                                    </h3>
 
                                     <div className="form-grid">
                                         <div className="input-group">
                                             <label>Select Product</label>
-                                            <select
-                                                className="input-field"
-                                                name="product_id"
-                                                value={formData.product_id}
-                                                onChange={handleFormChange}
-                                            >
-                                                <option value="">-- Choose Product --</option>
-                                                {productsList.map(p => (
-                                                    <option key={p.id} value={p.id}>
-                                                        {p.name}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                            <div className="custom-searchable-dropdown">
+                                                <input
+                                                    type="text"
+                                                    className="input-field"
+                                                    placeholder="Search or select product..."
+                                                    value={productSearch}
+                                                    onChange={(e) => {
+                                                        setProductSearch(e.target.value);
+                                                        setShowProductDropdown(true);
+                                                    }}
+                                                    onClick={() => setShowProductDropdown(true)}
+                                                />
+                                                {showProductDropdown && (
+                                                    <div className="dropdown-options glass-panel">
+                                                        {productsList
+                                                            .filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()))
+                                                            .map(p => (
+                                                                <div
+                                                                    key={p.id}
+                                                                    className="dropdown-option"
+                                                                    onClick={() => handleProductSelect(p)}
+                                                                >
+                                                                    {p.name}
+                                                                </div>
+                                                            ))}
+                                                        {productsList.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase())).length === 0 && (
+                                                            <div className="dropdown-option text-muted">No products found</div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="input-group">
                                             <label>Purchase Quantity</label>

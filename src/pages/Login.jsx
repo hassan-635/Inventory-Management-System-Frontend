@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { Mail, Lock, LogIn, LayoutDashboard } from 'lucide-react';
 import './Login.css';
@@ -11,6 +11,8 @@ const Login = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
+    const [loginType, setLoginType] = useState('salesman'); // 'salesman' or 'developer'
+
     const handleLogin = async (e) => {
         e.preventDefault();
         setError('');
@@ -18,8 +20,12 @@ const Login = () => {
         if (email && password) {
             setLoading(true);
             try {
-                console.log('Sending login request...', { email: email });
-                const response = await axios.post('/api/auth/login', { email, password });
+                const endpoint = loginType === 'developer'
+                    ? '/api/auth/login-developer'
+                    : '/api/auth/login-salesman';
+
+                console.log(`Sending login request to ${endpoint}...`, { email: email });
+                const response = await axios.post(endpoint, { email, password });
                 console.log('Login response:', response.data);
 
                 // Backend returns: { _id, name, email, role, token }
@@ -64,7 +70,24 @@ const Login = () => {
                         <LayoutDashboard size={36} color="var(--accent-primary)" />
                     </div>
                     <h1 className="login-title">Welcome Back</h1>
-                    <p className="login-subtitle">Sign in to your salesman account</p>
+                    <p className="login-subtitle">Sign in to your account</p>
+                </div>
+
+                <div className="role-selector">
+                    <button
+                        className={`role-tab ${loginType === 'salesman' ? 'active' : ''}`}
+                        onClick={() => setLoginType('salesman')}
+                        type="button"
+                    >
+                        Salesman
+                    </button>
+                    <button
+                        className={`role-tab ${loginType === 'developer' ? 'active' : ''}`}
+                        onClick={() => setLoginType('developer')}
+                        type="button"
+                    >
+                        Developer
+                    </button>
                 </div>
 
                 <form onSubmit={handleLogin} className="login-form">
@@ -76,7 +99,7 @@ const Login = () => {
                             <input
                                 type="email"
                                 className="input-field with-icon"
-                                placeholder="sales@inventorypro.com"
+                                placeholder={loginType === 'developer' ? "developer@inventorypro.com" : "sales@inventorypro.com"}
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
@@ -109,9 +132,13 @@ const Login = () => {
                     </div>
 
                     <button type="submit" className="btn-primary login-btn" disabled={loading}>
-                        <span>{loading ? 'Signing in...' : 'Sign In'}</span>
+                        <span>{loading ? 'Signing in...' : `Sign In as ${loginType === 'developer' ? 'Developer' : 'Salesman'}`}</span>
                         {!loading && <LogIn size={20} />}
                     </button>
+
+                    <p className="signup-redirect">
+                        Don't have an account? <Link to="/signup">Sign Up</Link>
+                    </p>
                 </form>
             </div>
         </div>

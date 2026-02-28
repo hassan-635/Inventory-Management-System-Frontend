@@ -53,7 +53,7 @@ const DeveloperDashboard = () => {
                 }
             });
 
-            setMessage({ type: 'success', text: `Salesman account for ${response.data.user.name} created successfully!` });
+            setMessage({ type: 'success', text: `Salesman account for ${response.data.salesman.name} created successfully!` });
 
             // Clear form
             setName('');
