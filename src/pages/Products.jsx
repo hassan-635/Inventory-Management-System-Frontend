@@ -14,6 +14,8 @@ const Products = () => {
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState('add'); // 'add' or 'edit'
+    const [supplierSearch, setSupplierSearch] = useState('');
+    const [showSupplierDropdown, setShowSupplierDropdown] = useState(false);
     const [formData, setFormData] = useState({
         id: null,
         name: '',
@@ -77,6 +79,8 @@ const Products = () => {
 
     const openAddModal = () => {
         setModalMode('add');
+        setSupplierSearch('');
+        setShowSupplierDropdown(false);
         setFormData({
             id: null,
             name: '',
@@ -93,6 +97,8 @@ const Products = () => {
 
     const openEditModal = (product) => {
         setModalMode('edit');
+        setSupplierSearch(product.purchased_from || '');
+        setShowSupplierDropdown(false);
         setFormData({
             id: product.id,
             name: product.name,
@@ -109,6 +115,13 @@ const Products = () => {
 
     const closeModal = () => {
         setIsModalOpen(false);
+        setShowSupplierDropdown(false);
+    };
+
+    const handleSupplierSelect = (supplierName) => {
+        setSupplierSearch(supplierName);
+        setFormData(prev => ({ ...prev, purchased_from: supplierName }));
+        setShowSupplierDropdown(false);
     };
 
     const handleFormChange = (e) => {
@@ -384,19 +397,39 @@ const Products = () => {
                             </div>
                             <div className="input-group">
                                 <label>Purchased From (Supplier)</label>
-                                <select
-                                    className="input-field"
-                                    name="purchased_from"
-                                    value={formData.purchased_from}
-                                    onChange={handleFormChange}
-                                >
-                                    <option value="">-- Select Supplier --</option>
-                                    {suppliersList.map(s => (
-                                        <option key={s.id} value={s.name}>
-                                            {s.name} {s.company_name ? `(${s.company_name})` : ''}
-                                        </option>
-                                    ))}
-                                </select>
+                                <div className="custom-searchable-dropdown">
+                                    <input
+                                        type="text"
+                                        className="input-field"
+                                        placeholder="Search or enter supplier name..."
+                                        name="purchased_from"
+                                        value={supplierSearch}
+                                        onChange={(e) => {
+                                            setSupplierSearch(e.target.value);
+                                            setFormData(prev => ({ ...prev, purchased_from: e.target.value }));
+                                            setShowSupplierDropdown(true);
+                                        }}
+                                        onClick={() => setShowSupplierDropdown(true)}
+                                    />
+                                    {showSupplierDropdown && (
+                                        <div className="dropdown-options glass-panel">
+                                            {suppliersList
+                                                .filter(s => (s.name + (s.company_name ? ` ${s.company_name}` : '')).toLowerCase().includes(supplierSearch.toLowerCase()))
+                                                .map(s => (
+                                                    <div
+                                                        key={s.id}
+                                                        className="dropdown-option"
+                                                        onClick={() => handleSupplierSelect(s.name)}
+                                                    >
+                                                        {s.name} {s.company_name ? `(${s.company_name})` : ''}
+                                                    </div>
+                                                ))}
+                                            {suppliersList.filter(s => (s.name + (s.company_name ? ` ${s.company_name}` : '')).toLowerCase().includes(supplierSearch.toLowerCase())).length === 0 && (
+                                                <div className="dropdown-option text-muted">Press enter to use "{supplierSearch}"</div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="modal-footer">
