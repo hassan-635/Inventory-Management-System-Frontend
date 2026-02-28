@@ -27,7 +27,10 @@ const Suppliers = () => {
         txn_id: null,
         add_payment: '',
         new_total_amount: '',
-        remaining_amount: 0
+        remaining_amount: 0,
+        txn_paid_amount: 0,
+        txn_total_amount: 0,
+        unit_price: ''
     });
 
     useEffect(() => {
@@ -106,7 +109,10 @@ const Suppliers = () => {
             txn_id: null,
             add_payment: '',
             new_total_amount: '',
-            remaining_amount: 0
+            remaining_amount: 0,
+            txn_paid_amount: 0,
+            txn_total_amount: 0,
+            unit_price: ''
         });
         setIsModalOpen(true);
     };
@@ -122,7 +128,10 @@ const Suppliers = () => {
             txn_id: txn ? txn.id : null,
             add_payment: '',
             new_total_amount: txn ? txn.total_amount : '',
-            remaining_amount: txn ? (Number(txn.total_amount || 0) - Number(txn.paid_amount || 0)) : 0
+            remaining_amount: txn ? (Number(txn.total_amount || 0) - Number(txn.paid_amount || 0)) : 0,
+            txn_paid_amount: txn ? (Number(txn.paid_amount || 0)) : 0,
+            txn_total_amount: txn ? (Number(txn.total_amount || 0)) : 0,
+            unit_price: ''
         });
         setIsModalOpen(true);
     };
@@ -133,7 +142,33 @@ const Suppliers = () => {
 
     const handleFormChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+
+        setFormData(prev => {
+            const newData = { ...prev, [name]: value };
+
+            if (modalMode === 'add') {
+                // Pre-fill unit_price when product is selected
+                if (name === 'product_id') {
+                    const selectedProduct = productsList.find(p => p.id === parseInt(value));
+                    if (selectedProduct && !prev.unit_price) {
+                        newData.unit_price = selectedProduct.price;
+                    }
+                }
+
+                // Auto-calculate total_amount = unit_price × quantity
+                if (name === 'product_id' || name === 'quantity' || name === 'unit_price') {
+                    const qty = parseInt(newData.quantity);
+                    const price = Number(newData.unit_price);
+                    if (qty > 0 && price > 0) {
+                        newData.total_amount = price * qty;
+                    } else {
+                        newData.total_amount = '';
+                    }
+                }
+            }
+
+            return newData;
+        });
     };
 
     const handleFormSubmit = async (e) => {
@@ -147,6 +182,16 @@ const Suppliers = () => {
             };
 
             if (modalMode === 'add') {
+                if (formData.product_id && Number(formData.quantity) > 0) {
+                    if (Number(formData.paid_amount || 0) > Number(formData.total_amount)) {
+                        alert("Paid amount cannot exceed total amount.");
+                        return;
+                    }
+                    if (Number(formData.paid_amount || 0) < 0 || Number(formData.total_amount) < 0 || Number(formData.quantity) <= 0) {
+                        alert("Amounts and quantity must be valid positive numbers.");
+                        return;
+                    }
+                }
                 const supplierRes = await axios.post('/api/suppliers', payload, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -169,6 +214,25 @@ const Suppliers = () => {
                 }
             } else {
                 if (formData.txn_id) {
+                    let final_paid_amount = Number(formData.txn_paid_amount || 0);
+                    let final_total_amount = Number(formData.txn_total_amount || 0);
+
+                    if (formData.add_payment && Number(formData.add_payment) > 0) {
+                        final_paid_amount += Number(formData.add_payment);
+                    }
+                    if (formData.new_total_amount !== '' && Number(formData.new_total_amount) >= 0) {
+                        final_total_amount = Number(formData.new_total_amount);
+                    }
+
+                    if (final_paid_amount > final_total_amount) {
+                        alert("Total paid amount cannot exceed the total amount payable.");
+                        return;
+                    }
+                    if (final_paid_amount < 0 || final_total_amount < 0) {
+                        alert("Amounts cannot be negative.");
+                        return;
+                    }
+
                     const updatePayload = {};
                     if (formData.add_payment && Number(formData.add_payment) > 0) {
                         updatePayload.add_payment = Number(formData.add_payment);
@@ -427,16 +491,30 @@ const Suppliers = () => {
 
                                     <div className="form-grid">
                                         <div className="input-group">
+                                            <label>Unit Price (Rs)</label>
+                                            <input
+                                                type="number"
+                                                className="input-field"
+                                                name="unit_price"
+                                                value={formData.unit_price}
+                                                onChange={handleFormChange}
+                                                min="0"
+                                            />
+                                        </div>
+                                        <div className="input-group">
                                             <label>Total Amount (Rs)</label>
                                             <input
                                                 type="number"
                                                 className="input-field"
                                                 name="total_amount"
                                                 value={formData.total_amount}
-                                                onChange={handleFormChange}
-                                                min="0"
+                                                readOnly
+                                                style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-muted)' }}
                                             />
                                         </div>
+                                    </div>
+
+                                    <div className="form-grid">
                                         <div className="input-group">
                                             <label>Paid Amount (Rs)</label>
                                             <input
@@ -448,17 +526,16 @@ const Suppliers = () => {
                                                 min="0"
                                             />
                                         </div>
-                                    </div>
-
-                                    <div className="input-group">
-                                        <label>Purchase Date</label>
-                                        <input
-                                            type="date"
-                                            className="input-field"
-                                            name="purchase_date"
-                                            value={formData.purchase_date}
-                                            onChange={handleFormChange}
-                                        />
+                                        <div className="input-group">
+                                            <label>Purchase Date</label>
+                                            <input
+                                                type="date"
+                                                className="input-field"
+                                                name="purchase_date"
+                                                value={formData.purchase_date}
+                                                onChange={handleFormChange}
+                                            />
+                                        </div>
                                     </div>
                                 </>
                             )}
@@ -468,6 +545,16 @@ const Suppliers = () => {
                                     <hr className="my-4 border-gray-700" />
                                     <h3 className="text-lg font-medium text-gray-200 mb-4">Update Payment / Total</h3>
                                     <div className="form-grid">
+                                        <div className="input-group">
+                                            <label>Remaining Payable (Rs)</label>
+                                            <input
+                                                type="text"
+                                                className="input-field"
+                                                value={`Rs. ${formData.remaining_amount}`}
+                                                disabled
+                                                style={{ backgroundColor: 'var(--bg-secondary)', color: formData.remaining_amount > 0 ? '#f87171' : '#4ade80', fontWeight: 'bold' }}
+                                            />
+                                        </div>
                                         <div className="input-group">
                                             <label>Update Total Amount (Rs)</label>
                                             <input
@@ -480,8 +567,10 @@ const Suppliers = () => {
                                                 placeholder="New Total Amount..."
                                             />
                                         </div>
+                                    </div>
+                                    <div className="form-grid">
                                         <div className="input-group">
-                                            <label>Add New Payment (Rs)</label>
+                                            <label>Add New Payment (Rs) <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>(max: {formData.remaining_amount})</span></label>
                                             <input
                                                 type="number"
                                                 className="input-field"
@@ -489,6 +578,7 @@ const Suppliers = () => {
                                                 value={formData.add_payment}
                                                 onChange={handleFormChange}
                                                 min="0"
+                                                max={formData.remaining_amount}
                                                 placeholder="Amount to pay..."
                                             />
                                         </div>
