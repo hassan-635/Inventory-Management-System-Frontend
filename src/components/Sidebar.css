@@ -1,5 +1,6 @@
 .sidebar {
-    width: 280px;
+    width: 60px;
+    /* Extra slim sidebar */
     height: calc(100vh - 2rem);
     margin: 1rem;
     display: flex;
@@ -7,10 +8,12 @@
     border-radius: 20px;
     background: rgba(24, 24, 27, 0.7);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+    transition: width 0.3s ease;
+    z-index: 50;
 }
 
 .sidebar-header {
-    padding: 2rem 1.5rem;
+    padding: 2rem 0;
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -28,10 +31,8 @@
 }
 
 .logo-text {
-    font-size: 1.25rem;
-    font-weight: 700;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
+    display: none;
+    /* Hide logo text */
 }
 
 .sidebar-nav {
@@ -45,18 +46,45 @@
 .nav-link {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    padding: 0.875rem 1rem;
+    justify-content: center;
+    padding: 0.875rem 0;
     border-radius: 12px;
     color: var(--text-secondary);
     position: relative;
-    overflow: hidden;
+    overflow: visible;
+    /* Allow tooltip to overflow */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-link:hover {
     background: rgba(255, 255, 255, 0.03);
     color: var(--text-primary);
+}
+
+/* Tooltip on Hover */
+.nav-link .nav-text {
+    position: absolute;
+    left: 60px;
+    /* Position to the right of the extra slim sidebar */
+    background: rgba(15, 23, 42, 0.9);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-10px);
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    z-index: 100;
+}
+
+.nav-link:hover .nav-text {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
 }
 
 .nav-link.active {
@@ -111,18 +139,22 @@
 }
 
 .sidebar-footer {
-    padding: 1.5rem;
+    padding: 1.5rem 0;
     border-top: 1px solid var(--glass-border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .user-profile {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    justify-content: center;
     padding: 0.5rem;
     border-radius: 12px;
     transition: background 0.2s ease;
     cursor: pointer;
+    position: relative;
 }
 
 .user-profile:hover {
@@ -143,18 +175,12 @@
     box-shadow: 0 4px 10px rgba(139, 92, 246, 0.3);
 }
 
+/* Hide user info text, maybe show on hover like tooltip */
 .user-info {
-    display: flex;
-    flex-direction: column;
+    display: none;
 }
 
-.user-name {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.user-role {
-    font-size: 0.8rem;
-    color: var(--text-muted);
+/* Update logout button to be icon only */
+.logout-btn-text {
+    display: none;
 }

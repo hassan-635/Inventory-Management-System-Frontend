@@ -3,8 +3,9 @@
   --bg-primary: #09090b;
   --bg-secondary: #18181b;
   --bg-tertiary: #27272a;
-  
-  --accent-primary: #8b5cf6; /* Vibrant Purple */
+
+  --accent-primary: #8b5cf6;
+  /* Vibrant Purple */
   --accent-secondary: #c084fc;
   --accent-glow: rgba(139, 92, 246, 0.4);
 
@@ -69,12 +70,15 @@ button {
   height: 100vh;
   width: 100vw;
   overflow: hidden;
+  max-width: 100%;
 }
 
 .main-content {
   flex: 1;
   padding: 2rem;
   overflow-y: auto;
+  overflow-x: hidden;
+  /* Prevent horizontal scroll in main area */
   position: relative;
 }
 
@@ -130,22 +134,29 @@ button {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-primary); 
+  background: var(--bg-primary);
 }
- 
+
 ::-webkit-scrollbar-thumb {
-  background: var(--bg-tertiary); 
+  background: var(--bg-tertiary);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted); 
+  background: var(--text-muted);
 }
 
 /* Basic Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fade-in {
@@ -159,6 +170,7 @@ button {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
 .text-gradient-accent {
   background: linear-gradient(to right, var(--accent-secondary), var(--accent-primary));
   -webkit-background-clip: text;

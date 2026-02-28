@@ -59,20 +59,20 @@
 }
 
 .custom-table th {
-    padding: 1.25rem 1.5rem;
+    padding: 0.8rem 1rem;
     background: rgba(255, 255, 255, 0.02);
     color: var(--text-secondary);
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     border-bottom: 1px solid var(--glass-border);
 }
 
 .custom-table td {
-    padding: 1.25rem 1.5rem;
+    padding: 0.8rem 1rem;
     border-bottom: 1px solid var(--glass-border);
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     vertical-align: middle;
 }
 
@@ -109,7 +109,7 @@
 
 .status-pill {
     display: inline-flex;
-    padding: 0.35rem 0.75rem;
+    padding: 0.25rem 0.6rem;
     border-radius: 20px;
     font-size: 0.75rem;
     font-weight: 600;

@@ -90,9 +90,10 @@ const Sidebar = () => {
                     onMouseOut={(e) => {
                         e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
                     }}
+                    title="Logout"
                 >
                     <LogOut size={18} />
-                    <span>Logout</span>
+                    <span className="logout-btn-text">Logout</span>
                 </button>
             </div>
         </aside>
