@@ -134,6 +134,20 @@ const Products = () => {
 
     const handleFormSubmit = async (e) => {
         e.preventDefault();
+
+        if (formData.purchase_rate !== '' && formData.purchase_rate !== null) {
+            const pr = parseFloat(formData.purchase_rate);
+            const sp = parseFloat(formData.price);
+            if (pr < 0) {
+                alert('Purchase rate cannot be negative.');
+                return;
+            }
+            if (pr > sp) {
+                alert('Purchase rate cannot be greater than sale price.');
+                return;
+            }
+        }
+
         try {
             const token = localStorage.getItem('inventory_token');
             const dataToSubmit = {
