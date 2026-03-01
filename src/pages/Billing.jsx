@@ -118,6 +118,7 @@ const Billing = () => {
                     total_amount: itemTotal,
                     bill_type: actualBillType,
                     buyer_id: buyerId,
+                    buyer_name: customerName || 'Cash Walk-in Customer',
                     paid_amount: billType === 'udhaar' ? userPaid : itemTotal
                 };
 
@@ -147,8 +148,7 @@ const Billing = () => {
     };
 
     const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const tax = billType === 'original' ? subtotal * 0.18 : 0;
-    const total = subtotal + tax;
+    const total = subtotal;
 
     return (
         <div className="billing-container">
@@ -357,12 +357,6 @@ const Billing = () => {
                             <span>Subtotal</span>
                             <span>Rs. {subtotal.toLocaleString()}</span>
                         </div>
-                        {billType === 'original' && (
-                            <div className="summary-row">
-                                <span>Tax (18%)</span>
-                                <span>Rs. {tax.toLocaleString()}</span>
-                            </div>
-                        )}
                         <div className="summary-row total">
                             <span>Total Amount</span>
                             <span>Rs. {total.toLocaleString()}</span>
