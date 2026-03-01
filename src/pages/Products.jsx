@@ -21,6 +21,7 @@ const Products = () => {
         name: '',
         category: '',
         price: '',
+        purchase_rate: '',
         max_discount: '',
         purchased_from: '',
         purchase_date: '',
@@ -86,6 +87,7 @@ const Products = () => {
             name: '',
             category: '',
             price: '',
+            purchase_rate: '',
             max_discount: '',
             purchased_from: '',
             purchase_date: new Date().toISOString().split('T')[0],
@@ -104,6 +106,7 @@ const Products = () => {
             name: product.name,
             category: product.category || '',
             price: product.price,
+            purchase_rate: product.purchase_rate || '',
             max_discount: product.max_discount || '',
             purchased_from: product.purchased_from || '',
             purchase_date: product.purchase_date ? new Date(product.purchase_date).toISOString().split('T')[0] : '',
@@ -136,6 +139,7 @@ const Products = () => {
             const dataToSubmit = {
                 ...formData,
                 price: parseFloat(formData.price),
+                purchase_rate: formData.purchase_rate ? parseFloat(formData.purchase_rate) : null,
                 max_discount: formData.max_discount ? parseFloat(formData.max_discount) : null,
                 total_quantity: parseInt(formData.total_quantity, 10),
                 add_quantity: formData.add_quantity ? parseInt(formData.add_quantity, 10) : 0,
@@ -237,7 +241,8 @@ const Products = () => {
                                 <th>ID</th>
                                 <th>Name</th>
                                 <th>Category</th>
-                                <th>Price</th>
+                                <th>Sale Price</th>
+                                <th>Purchase Rate</th>
                                 <th>Max Discount</th>
                                 <th>Purchased From</th>
                                 <th>Purchase Date</th>
@@ -257,6 +262,7 @@ const Products = () => {
                                         </span>
                                     </td>
                                     <td>Rs. {product.price}</td>
+                                    <td>{product.purchase_rate ? `Rs. ${product.purchase_rate}` : '-'}</td>
                                     <td>{product.max_discount ? `Rs. ${product.max_discount}` : '-'}</td>
                                     <td>{product.purchased_from || '-'}</td>
                                     <td>{product.purchase_date ? new Date(product.purchase_date).toLocaleDateString() : '-'}</td>
@@ -332,7 +338,7 @@ const Products = () => {
                             </div>
                             <div className="form-grid">
                                 <div className="input-group">
-                                    <label>Price (Rs)</label>
+                                    <label>Sale Price (Rs)</label>
                                     <input
                                         type="number"
                                         className="input-field"
@@ -343,6 +349,19 @@ const Products = () => {
                                         required
                                     />
                                 </div>
+                                <div className="input-group">
+                                    <label>Purchase Rate (Rs)</label>
+                                    <input
+                                        type="number"
+                                        className="input-field"
+                                        name="purchase_rate"
+                                        value={formData.purchase_rate}
+                                        onChange={handleFormChange}
+                                        min="0"
+                                    />
+                                </div>
+                            </div>
+                            <div className="form-grid">
                                 <div className="input-group">
                                     <label>{modalMode === 'add' ? 'Total Quantity' : 'Current Total Quantity'}</label>
                                     <input
