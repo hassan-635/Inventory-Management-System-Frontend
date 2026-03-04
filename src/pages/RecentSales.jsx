@@ -161,6 +161,7 @@ const RecentSales = () => {
                         <thead>
                             <tr>
                                 <th>#</th>
+                                <th>Invoice ID</th>
                                 <th>Date</th>
                                 <th>Product</th>
                                 <th>Price</th>
@@ -179,6 +180,7 @@ const RecentSales = () => {
                                 return (
                                     <tr key={sale.id} className="animate-fade-in">
                                         <td>{idx + 1}</td>
+                                        <td style={{ fontFamily: 'monospace', color: 'var(--accent-primary)', fontWeight: 600 }}>#{sale.id}</td>
                                         <td>{sale.purchase_date ? new Date(sale.purchase_date).toLocaleDateString() : '-'}</td>
                                         <td className="font-medium">{sale.products?.name || '-'}</td>
                                         <td>Rs. {Number(sale.products?.price || 0).toLocaleString()}</td>
