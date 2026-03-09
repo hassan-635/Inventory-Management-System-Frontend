@@ -206,12 +206,12 @@ const Billing = () => {
                                     className="input-field"
                                     placeholder={billType === 'udhaar' ? 'Enter customer name (required)' : 'Enter or pick customer'}
                                     value={customerName}
-                                    onChange={(e) => { setCustomerName(e.target.value); setShowCustomerDropdown(true); }}
-                                    onFocus={() => setShowCustomerDropdown(true)}
+                                    onChange={(e) => { setCustomerName(e.target.value); setShowCustomerDropdown('customer'); }}
+                                    onFocus={() => setShowCustomerDropdown('customer')}
                                     onBlur={() => setTimeout(() => setShowCustomerDropdown(false), 150)}
                                     required={billType === 'udhaar'}
                                 />
-                                {showCustomerDropdown && customers.filter(c =>
+                                {showCustomerDropdown === 'customer' && customers.filter(c =>
                                     c.name.toLowerCase().includes(customerName.toLowerCase()) ||
                                     (c.company_name && c.company_name.toLowerCase().includes(customerName.toLowerCase()))
                                 ).length > 0 && (
@@ -244,20 +244,52 @@ const Billing = () => {
                     </div>
 
                     {/* Company Name - shown for Original and Udhaar bills */}
-                    {billType !== 'quotation' && (
-                        <div className="form-grid">
-                            <div className="input-group">
-                                <label>Company Name</label>
-                                <input
-                                    type="text"
-                                    className="input-field"
-                                    placeholder="e.g. ABC Construction Ltd (optional)"
-                                    value={companyName}
-                                    onChange={(e) => setCompanyName(e.target.value)}
-                                />
+                    {billType !== 'quotation' && (() => {
+                        const companyOptions = [...new Set(
+                            customers
+                                .map(c => c.company_name)
+                                .filter(Boolean)
+                        )];
+                        return (
+                            <div className="form-grid">
+                                <div className="input-group">
+                                    <label>Company Name</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <input
+                                            type="text"
+                                            className="input-field"
+                                            placeholder="Type or select a company..."
+                                            value={companyName}
+                                            onChange={(e) => setCompanyName(e.target.value)}
+                                            onFocus={() => setShowCustomerDropdown('company')}
+                                            onBlur={() => setTimeout(() => setShowCustomerDropdown(false), 150)}
+                                        />
+                                        {showCustomerDropdown === 'company' && companyOptions.filter(c =>
+                                            c.toLowerCase().includes(companyName.toLowerCase())
+                                        ).length > 0 && (
+                                                <div className="dropdown-options glass-panel" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100 }}>
+                                                    {companyOptions
+                                                        .filter(c => c.toLowerCase().includes(companyName.toLowerCase()))
+                                                        .map((c, i) => (
+                                                            <div
+                                                                key={i}
+                                                                className="dropdown-option"
+                                                                onMouseDown={() => {
+                                                                    setCompanyName(c);
+                                                                    setShowCustomerDropdown(false);
+                                                                }}
+                                                            >
+                                                                🏢 {c}
+                                                            </div>
+                                                        ))
+                                                    }
+                                                </div>
+                                            )}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        );
+                    })()}
 
                     {/* Udhaar-specific fields */}
                     {billType === 'udhaar' && (
