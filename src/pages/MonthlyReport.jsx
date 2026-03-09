@@ -52,37 +52,51 @@ const MonthlyReport = () => {
                     <h1 className="page-title">Monthly Financial Report</h1>
                     <p className="page-subtitle">Complete overview of your business health</p>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(15, 23, 42, 0.6)', padding: '5px 15px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                        <select
-                            value={filterMonth}
-                            onChange={(e) => setFilterMonth(e.target.value)}
-                            style={{ background: 'transparent', color: 'var(--text-primary)', border: 'none', outline: 'none', fontSize: '1rem', padding: '5px', cursor: 'pointer' }}
-                        >
-                            <option value="01">January</option>
-                            <option value="02">February</option>
-                            <option value="03">March</option>
-                            <option value="04">April</option>
-                            <option value="05">May</option>
-                            <option value="06">June</option>
-                            <option value="07">July</option>
-                            <option value="08">August</option>
-                            <option value="09">September</option>
-                            <option value="10">October</option>
-                            <option value="11">November</option>
-                            <option value="12">December</option>
-                        </select>
-                        <span style={{ color: 'var(--text-muted)' }}>|</span>
-                        <select
-                            value={filterYear}
-                            onChange={(e) => setFilterYear(e.target.value)}
-                            style={{ background: 'transparent', color: 'var(--text-primary)', border: 'none', outline: 'none', fontSize: '1rem', padding: '5px', cursor: 'pointer' }}
-                        >
-                            <option value="2024">2024</option>
-                            <option value="2025">2025</option>
-                            <option value="2026">2026</option>
-                            <option value="2027">2027</option>
-                        </select>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {/* Month selector */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>Month</span>
+                        <div style={{ position: 'relative' }}>
+                            <select
+                                value={filterMonth}
+                                onChange={(e) => setFilterMonth(e.target.value)}
+                                className="input-field minimal-select"
+                                style={{ padding: '8px 36px 8px 12px', minWidth: '130px', appearance: 'none', WebkitAppearance: 'none', cursor: 'pointer', fontSize: '0.95rem', fontWeight: '500' }}
+                            >
+                                <option value="01">January</option>
+                                <option value="02">February</option>
+                                <option value="03">March</option>
+                                <option value="04">April</option>
+                                <option value="05">May</option>
+                                <option value="06">June</option>
+                                <option value="07">July</option>
+                                <option value="08">August</option>
+                                <option value="09">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                            <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)', fontSize: '0.8rem' }}>▼</span>
+                        </div>
+                    </div>
+
+                    {/* Year selector */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>Year</span>
+                        <div style={{ position: 'relative' }}>
+                            <select
+                                value={filterYear}
+                                onChange={(e) => setFilterYear(e.target.value)}
+                                className="input-field minimal-select"
+                                style={{ padding: '8px 36px 8px 12px', minWidth: '90px', appearance: 'none', WebkitAppearance: 'none', cursor: 'pointer', fontSize: '0.95rem', fontWeight: '500' }}
+                            >
+                                <option value="2024">2024</option>
+                                <option value="2025">2025</option>
+                                <option value="2026">2026</option>
+                                <option value="2027">2027</option>
+                            </select>
+                            <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)', fontSize: '0.8rem' }}>▼</span>
+                        </div>
                     </div>
                 </div>
             </header>
