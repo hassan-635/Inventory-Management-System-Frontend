@@ -115,7 +115,8 @@ const Expenses = () => {
                         placeholder="Search expenses by category or description..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="search-input"
+                        className="search-input input-field"
+                        style={{ paddingLeft: '40px', background: 'rgba(255, 255, 255, 0.05)' }}
                     />
                 </div>
 
@@ -125,8 +126,8 @@ const Expenses = () => {
                         <select
                             value={filterYear}
                             onChange={(e) => setFilterYear(e.target.value)}
-                            className="form-input"
-                            style={{ width: '100px', padding: '8px 12px', background: 'var(--bg-primary)' }}
+                            className="input-field minimal-select"
+                            style={{ width: '100px', padding: '8px 12px' }}
                         >
                             <option value="2024">2024</option>
                             <option value="2025">2025</option>
@@ -140,8 +141,8 @@ const Expenses = () => {
                         <select
                             value={filterMonth}
                             onChange={(e) => setFilterMonth(e.target.value)}
-                            className="form-input"
-                            style={{ width: '130px', padding: '8px 12px', background: 'var(--bg-primary)' }}
+                            className="input-field minimal-select"
+                            style={{ width: '130px', padding: '8px 12px' }}
                         >
                             <option value="01">January</option>
                             <option value="02">February</option>
@@ -174,9 +175,13 @@ const Expenses = () => {
 
             <div className="table-container glass-panel">
                 {loading ? (
-                    <div className="loading-spinner" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading expenses...</div>
+                    <div className="loading-state">Loading expenses...</div>
                 ) : filteredExpenses.length === 0 ? (
-                    <div className="empty-state" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>No expenses found for this month.</div>
+                    <div className="empty-state">
+                        <DollarSign size={48} className="empty-icon" />
+                        <h3>No expenses found</h3>
+                        <p>No expenses logged for this period.</p>
+                    </div>
                 ) : (
                     <table className="data-table">
                         <thead>
@@ -193,7 +198,7 @@ const Expenses = () => {
                                 <tr key={expense.id}>
                                     <td>{new Date(expense.date).toLocaleDateString()}</td>
                                     <td>
-                                        <span className={`status-badge ${expense.category.toLowerCase().replace(' ', '-')}`} style={{ backgroundColor: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', padding: '4px 8px', borderRadius: '20px', fontSize: '0.85rem' }}>
+                                        <span className={`status-badge ${expense.category.toLowerCase().replace(' ', '-')}`} style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '500' }}>
                                             {expense.category}
                                         </span>
                                     </td>
@@ -201,10 +206,10 @@ const Expenses = () => {
                                     <td style={{ fontWeight: '500', color: '#ef4444' }}>Rs. {Number(expense.amount).toLocaleString()}</td>
                                     <td>
                                         <div className="action-buttons">
-                                            <button className="btn-icon edit" onClick={() => handleOpenModal(expense)}>
+                                            <button className="icon-btn-small text-accent" onClick={() => handleOpenModal(expense)}>
                                                 <Edit2 size={16} />
                                             </button>
-                                            <button className="btn-icon delete" onClick={() => handleDelete(expense.id)}>
+                                            <button className="icon-btn-small text-danger" onClick={() => handleDelete(expense.id)}>
                                                 <Trash2 size={16} />
                                             </button>
                                         </div>
@@ -260,12 +265,12 @@ const Expenses = () => {
                                     <span style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>Rs.</span>
                                     <input
                                         type="number"
-                                        className="form-input"
+                                        className="input-field"
                                         value={currentExpense.amount}
                                         onChange={e => setCurrentExpense({ ...currentExpense, amount: e.target.value })}
                                         required
                                         min="0"
-                                        style={{ paddingLeft: '45px', background: 'var(--bg-primary)', fontSize: '1.1rem', fontWeight: '500' }}
+                                        style={{ paddingLeft: '45px', fontSize: '1.1rem', fontWeight: '500' }}
                                         placeholder="0"
                                     />
                                 </div>
@@ -274,16 +279,18 @@ const Expenses = () => {
                             <div className="form-group">
                                 <label>Description (Optional)</label>
                                 <textarea
-                                    className="form-input"
-                                    style={{ minHeight: '80px', resize: 'vertical', background: 'var(--bg-primary)' }}
+                                    className="input-field"
+                                    style={{ minHeight: '80px', resize: 'vertical' }}
                                     value={currentExpense.description}
                                     onChange={e => setCurrentExpense({ ...currentExpense, description: e.target.value })}
                                     placeholder="e.g. Bought petrol for bike"
                                 />
                             </div>
 
-                            <div className="modal-actions">
-                                <button type="button" className="btn-secondary" onClick={handleCloseModal}>Cancel</button>
+                            <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px', marginTop: '20px' }}>
+                                <button type="button" className="btn-secondary" onClick={handleCloseModal} style={{ padding: '0.75rem 1.5rem', background: 'transparent', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-secondary)' }}>
+                                    Cancel
+                                </button>
                                 <button type="submit" className="btn-primary">
                                     {currentExpense.id ? 'Update Expense' : 'Save Expense'}
                                 </button>

@@ -26,7 +26,8 @@ const Products = () => {
         purchased_from: '',
         purchase_date: '',
         total_quantity: '',
-        add_quantity: ''
+        add_quantity: '',
+        quantity_unit: 'Per Unit'
     });
 
     useEffect(() => {
@@ -92,7 +93,8 @@ const Products = () => {
             purchased_from: '',
             purchase_date: new Date().toISOString().split('T')[0],
             total_quantity: '',
-            add_quantity: ''
+            add_quantity: '',
+            quantity_unit: 'Per Unit'
         });
         setIsModalOpen(true);
     };
@@ -111,7 +113,8 @@ const Products = () => {
             purchased_from: product.purchased_from || '',
             purchase_date: product.purchase_date ? new Date(product.purchase_date).toISOString().split('T')[0] : '',
             total_quantity: product.total_quantity,
-            add_quantity: ''
+            add_quantity: '',
+            quantity_unit: product.quantity_unit || 'Per Unit'
         });
         setIsModalOpen(true);
     };
@@ -258,6 +261,7 @@ const Products = () => {
                                 <th>Sale Price</th>
                                 <th>Purchase Rate</th>
                                 <th>Max Discount</th>
+                                <th>Unit</th>
                                 <th>Purchased From</th>
                                 <th>Purchase Date</th>
                                 <th>Total Qty</th>
@@ -278,6 +282,11 @@ const Products = () => {
                                     <td>Rs. {product.price}</td>
                                     <td>{product.purchase_rate ? `Rs. ${product.purchase_rate}` : '-'}</td>
                                     <td>{product.max_discount ? `Rs. ${product.max_discount}` : '-'}</td>
+                                    <td>
+                                        <span className="badge" style={{ backgroundColor: 'rgba(139, 92, 246, 0.1)', color: '#a78bfa', padding: '3px 8px', borderRadius: '4px', fontSize: '0.8rem' }}>
+                                            {product.quantity_unit || 'Per Unit'}
+                                        </span>
+                                    </td>
                                     <td>{product.purchased_from || '-'}</td>
                                     <td>{product.purchase_date ? new Date(product.purchase_date).toLocaleDateString() : '-'}</td>
                                     <td>{product.total_quantity}</td>
@@ -377,6 +386,36 @@ const Products = () => {
                             </div>
                             <div className="form-grid">
                                 <div className="input-group">
+                                    <label>Quantity Unit</label>
+                                    <select
+                                        className="input-field minimal-select"
+                                        name="quantity_unit"
+                                        value={formData.quantity_unit}
+                                        onChange={handleFormChange}
+                                        required
+                                    >
+                                        <option value="Per Unit">Per Unit</option>
+                                        <option value="Per Kilo">Per Kilo</option>
+                                        <option value="Per Dozen">Per Dozen</option>
+                                        <option value="Per Liter">Per Liter</option>
+                                        <option value="Per Ft">Per Ft</option>
+                                        <option value="Per Meter">Per Meter</option>
+                                    </select>
+                                </div>
+                                <div className="input-group">
+                                    <label>Max Discount (Rs)</label>
+                                    <input
+                                        type="number"
+                                        className="input-field"
+                                        name="max_discount"
+                                        value={formData.max_discount}
+                                        onChange={handleFormChange}
+                                        min="0"
+                                    />
+                                </div>
+                            </div>
+                            <div className="form-grid">
+                                <div className="input-group">
                                     <label>{modalMode === 'add' ? 'Total Quantity' : 'Current Total Quantity'}</label>
                                     <input
                                         type="number"
@@ -406,17 +445,6 @@ const Products = () => {
                                 )}
                             </div>
                             <div className="form-grid">
-                                <div className="input-group">
-                                    <label>Max Discount (Rs)</label>
-                                    <input
-                                        type="number"
-                                        className="input-field"
-                                        name="max_discount"
-                                        value={formData.max_discount}
-                                        onChange={handleFormChange}
-                                        min="0"
-                                    />
-                                </div>
                                 <div className="input-group">
                                     <label>Purchase Date</label>
                                     <input
@@ -472,10 +500,10 @@ const Products = () => {
                                 </button>
                             </div>
                         </form>
-                    </div>
-                </div>
+                    </div >
+                </div >
             )}
-        </div>
+        </div >
     );
 };
 

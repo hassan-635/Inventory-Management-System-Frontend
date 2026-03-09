@@ -165,7 +165,9 @@ const MonthlyReport = () => {
                     <div className="glass-panel table-container">
                         <h3 style={{ padding: '15px 20px', borderBottom: '1px solid var(--glass-border)', margin: 0, fontSize: '1rem' }}>Cash Collected from Buyers</h3>
                         {activity_lists.payments_received_from_buyers.length === 0 ? (
-                            <p style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>No collections recorded this month.</p>
+                            <div className="empty-state" style={{ padding: '2rem' }}>
+                                <p>No collections recorded this month.</p>
+                            </div>
                         ) : (
                             <table className="data-table">
                                 <thead>
@@ -233,7 +235,9 @@ const MonthlyReport = () => {
                     <div className="glass-panel table-container">
                         <h3 style={{ padding: '15px 20px', borderBottom: '1px solid var(--glass-border)', margin: 0, fontSize: '1rem' }}>Payments Made to Suppliers</h3>
                         {activity_lists.payments_made_to_suppliers.length === 0 ? (
-                            <p style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>No payments to suppliers this month.</p>
+                            <div className="empty-state" style={{ padding: '2rem' }}>
+                                <p>No payments to suppliers this month.</p>
+                            </div>
                         ) : (
                             <table className="data-table">
                                 <thead>
@@ -263,7 +267,9 @@ const MonthlyReport = () => {
                     ⚠️ Action Required: Buyers with Outstanding Dues (All-Time)
                 </h3>
                 {activity_lists.all_time_buyers_with_dues.length === 0 ? (
-                    <p style={{ padding: '30px', textAlign: 'center', color: '#22c55e', fontWeight: '500' }}>Great! No pending dues from any buyers.</p>
+                    <div className="empty-state" style={{ padding: '2rem' }}>
+                        <p style={{ color: '#22c55e', fontWeight: '500' }}>Great! No pending dues from any buyers.</p>
+                    </div>
                 ) : (
                     <table className="data-table">
                         <thead>
