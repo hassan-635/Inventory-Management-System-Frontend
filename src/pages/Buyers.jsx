@@ -21,6 +21,7 @@ const Buyers = () => {
         name: '',
         phone: '',
         address: '',
+        company_name: '',
         product_id: '',
         product_name: '',
         quantity: '',
@@ -72,15 +73,15 @@ const Buyers = () => {
 
             setError(null);
         } catch (err) {
-            console.error('Error fetching buyers:', err);
-            setError('Failed to load buyers. Please try again.');
+            console.error('Error fetching customers:', err);
+            setError('Failed to load customers. Please try again.');
         } finally {
             setLoading(false);
         }
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this buyer?')) return;
+        if (!window.confirm('Are you sure you want to delete this customer?')) return;
         try {
             const token = localStorage.getItem('inventory_token');
             await axios.delete(`/api/buyers/${id}`, {
@@ -88,8 +89,8 @@ const Buyers = () => {
             });
             fetchBuyers();
         } catch (err) {
-            console.error('Error deleting buyer:', err);
-            alert('Failed to delete buyer.');
+            console.error('Error deleting customer:', err);
+            alert('Failed to delete customer.');
         }
     };
 
@@ -102,6 +103,7 @@ const Buyers = () => {
             name: '',
             phone: '',
             address: '',
+            company_name: '',
             product_id: '',
             product_name: '',
             quantity: '',
@@ -123,6 +125,7 @@ const Buyers = () => {
             name: row.name,
             phone: row.phone || '',
             address: row.address || '',
+            company_name: row.company_name || '',
             txn_id: txn ? txn.id : null,
             add_payment: '',
             remaining_amount: txn ? (Number(txn.total_amount || 0) - Number(txn.paid_amount || 0)) : 0
@@ -157,7 +160,8 @@ const Buyers = () => {
             const payload = {
                 name: formData.name,
                 phone: formData.phone,
-                address: formData.address
+                address: formData.address,
+                company_name: formData.company_name || null
             };
 
             const finalProductName = formData.product_name || productSearch;
@@ -206,13 +210,14 @@ const Buyers = () => {
             fetchBuyers();
             closeModal();
         } catch (err) {
-            console.error('Error saving buyer:', err);
-            alert(err.response?.data?.error || 'Failed to save buyer.');
+            console.error('Error saving customer:', err);
+            alert(err.response?.data?.error || 'Failed to save customer.');
         }
     };
 
     const filteredBuyers = buyers.filter(buyer =>
-        buyer.name.toLowerCase().includes(searchQuery.toLowerCase())
+        buyer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (buyer.company_name && buyer.company_name.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
     const flattenedData = [];
@@ -231,12 +236,12 @@ const Buyers = () => {
         <div className="page-container">
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">Buyers Directory</h1>
+                    <h1 className="page-title">Customers Directory</h1>
                     <p className="page-subtitle">Track credit sales (Udhaar) and collections</p>
                 </div>
                 <button className="btn-primary flex items-center gap-2" onClick={openAddModal}>
                     <Plus size={20} />
-                    <span>Add Buyer</span>
+                    <span>Add Customer</span>
                 </button>
             </div>
 
@@ -260,7 +265,7 @@ const Buyers = () => {
                         <Search className="search-icon" size={20} />
                         <input
                             type="text"
-                            placeholder="Search buyers..."
+                            placeholder="Search customers by name or company..."
                             className="search-input"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -276,7 +281,8 @@ const Buyers = () => {
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>Buyer Name</th>
+                                    <th>Customer Name</th>
+                                    <th>Company</th>
                                     <th>Contact</th>
                                     <th>Address</th>
                                     <th>Product</th>
@@ -301,6 +307,13 @@ const Buyers = () => {
                                                     </div>
                                                     <span className="font-medium text-primary">{row.name}</span>
                                                 </div>
+                                            </td>
+                                            <td>
+                                                {row.company_name ? (
+                                                    <span style={{ backgroundColor: 'rgba(56,189,248,0.1)', color: '#38bdf8', padding: '3px 8px', borderRadius: '4px', fontSize: '0.8rem' }}>
+                                                        🏢 {row.company_name}
+                                                    </span>
+                                                ) : '-'}
                                             </td>
                                             <td><span className="text-secondary">{row.phone || '-'}</span></td>
                                             <td><span className="text-secondary">{row.address || '-'}</span></td>
@@ -345,8 +358,8 @@ const Buyers = () => {
 
                                 {flattenedData.length === 0 && (
                                     <tr>
-                                        <td colSpan="10" className="text-center py-8 text-muted">
-                                            No buyers or Udhaar records found.
+                                        <td colSpan="11" className="text-center py-8 text-muted">
+                                            No customers or Udhaar records found.
                                         </td>
                                     </tr>
                                 )}
@@ -361,22 +374,35 @@ const Buyers = () => {
                 <div className="modal-overlay">
                     <div className="modal-content glass-panel animate-fade-in">
                         <div className="modal-header">
-                            <h2>{modalMode === 'add' ? 'Add New Buyer' : 'Edit Buyer'}</h2>
+                            <h2>{modalMode === 'add' ? 'Add New Customer' : 'Edit Customer'}</h2>
                             <button className="icon-btn-small" onClick={closeModal}>
                                 <X size={20} />
                             </button>
                         </div>
                         <form onSubmit={handleFormSubmit} className="modal-body">
-                            <div className="input-group">
-                                <label>Name</label>
-                                <input
-                                    type="text"
-                                    className="input-field"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleFormChange}
-                                    required
-                                />
+                            <div className="form-grid">
+                                <div className="input-group">
+                                    <label>Name *</label>
+                                    <input
+                                        type="text"
+                                        className="input-field"
+                                        name="name"
+                                        value={formData.name}
+                                        onChange={handleFormChange}
+                                        required
+                                    />
+                                </div>
+                                <div className="input-group">
+                                    <label>Company Name</label>
+                                    <input
+                                        type="text"
+                                        className="input-field"
+                                        name="company_name"
+                                        value={formData.company_name}
+                                        onChange={handleFormChange}
+                                        placeholder="e.g. ABC Construction Ltd"
+                                    />
+                                </div>
                             </div>
                             <div className="input-group">
                                 <label>Phone / Contact</label>
@@ -526,7 +552,7 @@ const Buyers = () => {
                             <div className="modal-footer">
                                 <button type="button" className="btn-secondary" onClick={closeModal}>Cancel</button>
                                 <button type="submit" className="btn-primary">
-                                    {modalMode === 'add' ? 'Save Buyer' : 'Update Buyer'}
+                                    {modalMode === 'add' ? 'Save Customer' : 'Update Customer'}
                                 </button>
                             </div>
                         </form>

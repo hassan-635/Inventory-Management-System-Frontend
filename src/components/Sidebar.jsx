@@ -27,7 +27,7 @@ const Sidebar = () => {
 
     const navItems = [
         { path: '/products', name: 'Products', icon: <Package size={20} /> },
-        { path: '/buyers', name: 'Buyers (Udhaar)', icon: <Users size={20} /> },
+        { path: '/buyers', name: 'Customers (Udhaar)', icon: <Users size={20} /> },
         { path: '/suppliers', name: 'Suppliers', icon: <Truck size={20} /> },
         { path: '/billing', name: 'Billing', icon: <FileText size={20} /> },
         { path: '/sales', name: 'Recent Sales', icon: <BarChart3 size={20} /> },

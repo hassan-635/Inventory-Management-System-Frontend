@@ -5,11 +5,14 @@ import './Billing.css';
 
 const Billing = () => {
     const [products, setProducts] = useState([]);
+    const [customers, setCustomers] = useState([]);
     const [cart, setCart] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState('');
     const [quantity, setQuantity] = useState(1);
     const [billType, setBillType] = useState('original');
     const [customerName, setCustomerName] = useState('');
+    const [companyName, setCompanyName] = useState('');
+    const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
@@ -19,6 +22,7 @@ const Billing = () => {
 
     useEffect(() => {
         fetchProducts();
+        fetchCustomers();
     }, []);
 
     const fetchProducts = async () => {
@@ -31,6 +35,18 @@ const Billing = () => {
         } catch (err) {
             console.error('Error fetching products:', err);
             setError('Failed to load products');
+        }
+    };
+
+    const fetchCustomers = async () => {
+        try {
+            const token = localStorage.getItem('inventory_token');
+            const response = await axios.get('/api/buyers', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setCustomers(response.data);
+        } catch (err) {
+            console.error('Error fetching customers:', err);
         }
     };
 
@@ -98,12 +114,13 @@ const Billing = () => {
             if (billType === 'udhaar') {
                 const buyerRes = await axios.post('/api/buyers', {
                     name: customerName.trim(),
-                    phone: buyerPhone.trim()
+                    phone: buyerPhone.trim(),
+                    company_name: companyName.trim() || null
                 }, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 buyerId = buyerRes.data.data?.[0]?.id;
-                if (!buyerId) throw new Error('Failed to create buyer');
+                if (!buyerId) throw new Error('Failed to create customer');
             }
 
             // ===== Process each cart item as a sale =====
@@ -119,6 +136,7 @@ const Billing = () => {
                     bill_type: actualBillType,
                     buyer_id: buyerId,
                     buyer_name: customerName || 'Cash Walk-in Customer',
+                    company_name: companyName || null,
                     paid_amount: billType === 'udhaar' ? userPaid : itemTotal
                 };
 
@@ -136,9 +154,11 @@ const Billing = () => {
 
             setCart([]);
             setCustomerName('');
+            setCompanyName('');
             setBuyerPhone('');
             setPaidAmount('');
             fetchProducts();
+            fetchCustomers();
         } catch (err) {
             console.error('Error creating sale:', err);
             alert(err.response?.data?.error || 'Failed to save bill. Please try again.');
@@ -179,44 +199,90 @@ const Billing = () => {
                         </div>
 
                         <div className="input-group">
-                            <label>{billType === 'udhaar' ? 'Buyer Name *' : 'Customer Name'}</label>
-                            <input
-                                type="text"
-                                className="input-field"
-                                placeholder={billType === 'udhaar' ? 'Enter buyer name (required)' : 'Enter customer name'}
-                                value={customerName}
-                                onChange={(e) => setCustomerName(e.target.value)}
-                                required={billType === 'udhaar'}
-                            />
+                            <label>{billType === 'udhaar' ? 'Customer Name *' : 'Customer Name'}</label>
+                            <div style={{ position: 'relative' }}>
+                                <input
+                                    type="text"
+                                    className="input-field"
+                                    placeholder={billType === 'udhaar' ? 'Enter customer name (required)' : 'Enter or pick customer'}
+                                    value={customerName}
+                                    onChange={(e) => { setCustomerName(e.target.value); setShowCustomerDropdown(true); }}
+                                    onFocus={() => setShowCustomerDropdown(true)}
+                                    onBlur={() => setTimeout(() => setShowCustomerDropdown(false), 150)}
+                                    required={billType === 'udhaar'}
+                                />
+                                {showCustomerDropdown && customers.filter(c =>
+                                    c.name.toLowerCase().includes(customerName.toLowerCase()) ||
+                                    (c.company_name && c.company_name.toLowerCase().includes(customerName.toLowerCase()))
+                                ).length > 0 && (
+                                        <div className="dropdown-options glass-panel" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100 }}>
+                                            {customers
+                                                .filter(c =>
+                                                    c.name.toLowerCase().includes(customerName.toLowerCase()) ||
+                                                    (c.company_name && c.company_name.toLowerCase().includes(customerName.toLowerCase()))
+                                                )
+                                                .map(c => (
+                                                    <div
+                                                        key={c.id}
+                                                        className="dropdown-option"
+                                                        onMouseDown={() => {
+                                                            setCustomerName(c.name);
+                                                            setCompanyName(c.company_name || '');
+                                                            setBuyerPhone(c.phone || '');
+                                                            setShowCustomerDropdown(false);
+                                                        }}
+                                                    >
+                                                        <strong>{c.name}</strong>
+                                                        {c.company_name && <span style={{ color: '#38bdf8', marginLeft: 8, fontSize: '0.85em' }}>🏢 {c.company_name}</span>}
+                                                    </div>
+                                                ))
+                                            }
+                                        </div>
+                                    )}
+                            </div>
                         </div>
                     </div>
 
                     {/* Udhaar-specific fields */}
                     {billType === 'udhaar' && (
-                        <div className="form-grid">
-                            <div className="input-group">
-                                <label>Buyer Phone *</label>
-                                <input
-                                    type="text"
-                                    className="input-field"
-                                    placeholder="Enter buyer phone"
-                                    value={buyerPhone}
-                                    onChange={(e) => setBuyerPhone(e.target.value)}
-                                    required
-                                />
+                        <>
+                            <div className="form-grid">
+                                <div className="input-group">
+                                    <label>Company Name</label>
+                                    <input
+                                        type="text"
+                                        className="input-field"
+                                        placeholder="e.g. ABC Construction Ltd"
+                                        value={companyName}
+                                        onChange={(e) => setCompanyName(e.target.value)}
+                                    />
+                                </div>
+                                <div className="input-group">
+                                    <label>Customer Phone *</label>
+                                    <input
+                                        type="text"
+                                        className="input-field"
+                                        placeholder="Enter phone number"
+                                        value={buyerPhone}
+                                        onChange={(e) => setBuyerPhone(e.target.value)}
+                                        required
+                                    />
+                                </div>
                             </div>
-                            <div className="input-group">
-                                <label>Paid Amount (Rs)</label>
-                                <input
-                                    type="number"
-                                    className="input-field"
-                                    placeholder="0"
-                                    min="0"
-                                    value={paidAmount}
-                                    onChange={(e) => setPaidAmount(e.target.value)}
-                                />
+                            <div className="form-grid">
+                                <div className="input-group">
+                                    <label>Paid Amount (Rs)</label>
+                                    <input
+                                        type="number"
+                                        className="input-field"
+                                        placeholder="0"
+                                        min="0"
+                                        value={paidAmount}
+                                        onChange={(e) => setPaidAmount(e.target.value)}
+                                    />
+                                </div>
                             </div>
-                        </div>
+                        </>
                     )}
 
                     <div className="divider"></div>
@@ -329,7 +395,7 @@ const Billing = () => {
                         </div>
                         <div className="meta-row">
                             <span>Customer:</span>
-                            <span>{customerName || 'Cash Customer'}</span>
+                            <span>{customerName || 'Cash Customer'}{companyName ? ` (${companyName})` : ''}</span>
                         </div>
                         <div className="meta-row">
                             <span>Invoice #:</span>
