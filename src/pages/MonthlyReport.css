@@ -1,0 +1,29 @@
+.report-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.ledger-section h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.stat-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.data-table th,
+.data-table td {
+    padding: 15px 20px;
+}
+
+/* Animations added inline in React component */

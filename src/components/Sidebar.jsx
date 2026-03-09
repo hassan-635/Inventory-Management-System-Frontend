@@ -1,5 +1,6 @@
 import { LayoutDashboard, Users, Truck, FileText, Package, BarChart3, LogOut, Receipt, CalendarDays } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import './Sidebar.css';
 
 const Sidebar = () => {
