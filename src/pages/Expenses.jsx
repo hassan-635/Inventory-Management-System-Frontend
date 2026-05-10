@@ -7,6 +7,7 @@ import { notifySuccess, notifyError, confirmAction } from '../utils/notification
 import ScrollableTable from '../components/ScrollableTable';
 import { fuzzyMatch } from '../utils/fuzzySearch';
 import './Expenses.css';
+import { formatDate, formatMonthYear } from '../utils/formatDate';
 
 const API_URL = '/api/expenses';
 
@@ -193,7 +194,7 @@ const Expenses = () => {
                         <DollarSign size={28} />
                     </div>
                     <div>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '5px' }}>Total Expenses ({selectedDate.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })})</p>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '5px' }}>Total Expenses ({formatMonthYear(selectedDate)})</p>
                         <h3 style={{ fontSize: '1.8rem', color: 'var(--text-primary)', margin: 0 }}>Rs. {totalExpenses.toLocaleString()}</h3>
                     </div>
                 </div>
@@ -222,7 +223,7 @@ const Expenses = () => {
                         <tbody>
                             {filteredExpenses.map((expense) => (
                                 <tr key={expense.id}>
-                                    <td>{new Date(expense.date).toLocaleDateString()}</td>
+                                    <td>{formatDate(expense.date)}</td>
                                     <td>
                                         <span className={`status-badge ${expense.category.toLowerCase().replace(' ', '-')}`} style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '500' }}>
                                             {expense.category}
