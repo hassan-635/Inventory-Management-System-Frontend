@@ -7,6 +7,7 @@ import { notifyError } from '../utils/notifications';
 import ScrollableTable from '../components/ScrollableTable';
 import './MonthlyReport.css';
 import './Reports.css';
+import { formatDate, formatMonthYear } from '../utils/formatDate';
 
 const API_URL = '/api/reports/monthly';
 
@@ -109,7 +110,7 @@ const MonthlyReport = () => {
                     <h1 style={{ fontSize: '1.8rem', color: 'var(--text-primary)', margin: '0 0 8px' }}>
                         {viewMode === 'overview' ? 'Monthly Summary' : 'Day-by-Day Monthly Summary'}
                     </h1>
-                    <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', margin: 0 }}>Period: <strong>{new Date(selectedDate).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</strong></p>
+                    <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', margin: 0 }}>Period: <strong>{formatMonthYear(selectedDate)}</strong></p>
                 </div>
 
                 {/* ====== OVERVIEW MODE ====== */}
@@ -487,7 +488,7 @@ const MonthlyReport = () => {
                                     <tbody>
                                         {reportData.daily_breakdown.map((day, idx) => (
                                             <tr key={idx} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                                                <td style={{ fontWeight: '600', padding: '14px 16px' }}>{new Date(day.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                                                <td style={{ fontWeight: '600', padding: '14px 16px' }}>{formatDate(day.date)}</td>
                                                 <td style={{ textAlign: 'right', color: 'var(--text-muted)', padding: '14px 16px' }}>{day.num_new_sales > 0 ? day.num_new_sales : '-'}</td>
                                                 <td style={{ textAlign: 'right', fontWeight: '600', color: 'var(--info)', padding: '14px 16px' }}>{day.total_sales > 0 ? `Rs. ${day.total_sales.toLocaleString()}` : '-'}</td>
                                                 <td style={{ textAlign: 'right', color: 'var(--success)', fontWeight: '600', padding: '14px 16px' }}>{day.cash_received > 0 ? `Rs. ${day.cash_received.toLocaleString()}` : '-'}</td>
