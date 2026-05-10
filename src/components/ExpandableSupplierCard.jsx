@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Truck, Edit, Trash2, Phone, Building, Package, DollarSign, CheckCircle, AlertCircle } from 'lucide-react';
 import './ExpandableSupplierCard.css';
+import { formatDate } from '../utils/formatDate';
 
 const ExpandableSupplierCard = ({
     supplier,
@@ -141,7 +142,7 @@ const ExpandableSupplierCard = ({
                                                     <span className="product-name">{displayProductName}</span>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                         <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                                                            🗓 {txn.purchase_date ? new Date(txn.purchase_date).toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
+                                                            🗓 {txn.purchase_date ? formatDate(txn.purchase_date) : 'N/A'}
                                                         </span>
                                                         {txn.payment_method && (
                                                             <span className={`payment-badge ${txn.payment_method.toLowerCase()}`} style={{ fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px' }}>
@@ -197,7 +198,7 @@ const ExpandableSupplierCard = ({
                                                                 background: 'var(--bg-secondary)', borderRadius: '6px', padding: '5px 9px', fontSize: '0.78rem'
                                                             }}>
                                                                 <span style={{ color: 'var(--text-muted)', minWidth: '90px' }}>
-                                                                    {pay.date ? new Date(pay.date).toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
+                                                                    {pay.date ? formatDate(pay.date) : 'N/A'}
                                                                 </span>
                                                                 <span style={{ fontWeight: 700, color: '#4ade80' }}>
                                                                     Rs. {Number(pay.amount_paid).toLocaleString()}
