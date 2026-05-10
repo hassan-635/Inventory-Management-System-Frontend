@@ -7,6 +7,7 @@ import {
 } from 'recharts';
 import CustomDatePicker from '../components/CustomDatePicker';
 import './DashboardAnalytics.css';
+import { formatDateShort } from '../utils/formatDate';
 
 const API_URL = '/api/reports/monthly';
 
@@ -51,7 +52,7 @@ const DashboardAnalytics = () => {
 
     // Formatting daily breakdown for the charts
     const chartData = (daily_breakdown || []).map(day => ({
-        date: new Date(day.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
+        date: formatDateShort(day.date),
         Sales: day.total_sales || 0,
         Expenses: day.expenses || 0,
         Profit: day.daily_profit || 0
