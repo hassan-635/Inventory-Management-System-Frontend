@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Plus, Trash2, Package, CheckCircle } from 'lucide-react';
 import './ProductSideList.css';
+import { formatDate } from '../utils/formatDate';
 
 const ProductSideList = ({ 
   isOpen, 
@@ -15,10 +16,6 @@ const ProductSideList = ({
   const addCount = pendingItems.filter(item => item.action === 'add').length;
   const deleteCount = pendingItems.filter(item => item.action === 'delete').length;
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString();
-  };
 
   const formatCurrency = (amount) => {
     if (!amount) return 'N/A';
