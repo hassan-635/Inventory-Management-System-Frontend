@@ -7,6 +7,7 @@ import Swal from 'sweetalert2';
 import ScrollableTable from '../components/ScrollableTable';
 import CustomDropdown from '../components/CustomDropdown';
 import './RecentSales.css';
+import { formatDate } from '../utils/formatDate';
 
 const TIME_FILTERS = [
     { key: '1d', label: 'Last Day' },
@@ -439,7 +440,7 @@ const RecentSales = () => {
                                                         {group.phone && <div style={{ fontSize: '0.8em', color: '#888', marginTop: '2px' }}>{group.phone}</div>}
                                                     </td>
                                                     <td rowSpan={rowSpan} style={{ verticalAlign: 'middle', borderRight: '1px solid var(--border-color)' }}>
-                                                        {group.date ? new Date(group.date).toLocaleDateString() : '-'}
+                                                        {group.date ? formatDate(group.date) : '-'}
                                                     </td>
                                                 </>
                                             )}
