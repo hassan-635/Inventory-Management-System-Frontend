@@ -6,6 +6,7 @@ import ScrollableTable from '../components/ScrollableTable';
 import CustomDropdown from '../components/CustomDropdown';
 import { fuzzyMatch } from '../utils/fuzzySearch';
 import './Companies.css';
+import { formatDate } from '../utils/formatDate';
 
 const Companies = () => {
     const [buyers, setBuyers] = useState([]);
@@ -498,8 +499,8 @@ const Companies = () => {
                                                                     // Check for date change to add a separator border
                                                                     let dateChanged = false;
                                                                     if (tIdx > 0 && txn && txnsArray[tIdx - 1]) {
-                                                                        const prevDate = new Date(txnsArray[tIdx - 1].date || txnsArray[tIdx - 1].purchase_date || 0).toLocaleDateString();
-                                                                        const currDate = new Date(txn.date || txn.purchase_date || 0).toLocaleDateString();
+                                                                        const prevDate = new Date(txnsArray[tIdx - 1].date || txnsArray[tIdx - 1].purchase_date || 0).toISOString().split('T')[0];
+                                                                        const currDate = new Date(txn.date || txn.purchase_date || 0).toISOString().split('T')[0];
                                                                         if (prevDate !== currDate) dateChanged = true;
                                                                     }
 
@@ -535,7 +536,7 @@ const Companies = () => {
                                                                                 txn.type === 'payment' ? (
                                                                                     <>
                                                                                         <td style={{ color: 'var(--success)', fontSize: '0.82rem', ...dateSeparatorStyle }}>
-                                                                                            {txn.date ? new Date(txn.date).toLocaleDateString() : '-'}
+                                                                                            {txn.date ? formatDate(txn.date) : '-'}
                                                                                         </td>
                                                                                         <td colSpan="2" style={{ color: 'var(--success)', ...dateSeparatorStyle }}>
                                                                                             <span className="font-medium">💰 Payment Received ({txn.payment_method || 'Cash'})</span>
@@ -547,7 +548,7 @@ const Companies = () => {
                                                                                 ) : (
                                                                                     <>
                                                                                         <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem', ...dateSeparatorStyle }}>
-                                                                                            {txn.purchase_date ? new Date(txn.purchase_date).toLocaleDateString() : '-'}
+                                                                                            {txn.purchase_date ? formatDate(txn.purchase_date) : '-'}
                                                                                         </td>
                                                                                         <td style={dateSeparatorStyle}><span className="font-medium">{txn.products?.name || `Product ID: ${txn.product_id}`}</span></td>
                                                                                         <td style={dateSeparatorStyle}>Rs. {Number(txn.total_amount).toLocaleString()}</td>
