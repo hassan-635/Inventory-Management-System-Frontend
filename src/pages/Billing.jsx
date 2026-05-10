@@ -7,6 +7,7 @@ import { alertSuccess, alertError } from '../utils/notifications';
 import { useShopSettings } from '../utils/useShopSettings';
 import { fuzzyMatch } from '../utils/fuzzySearch';
 import './Billing.css';
+import { formatDate } from '../utils/formatDate';
 
 
 const Billing = () => {
@@ -959,7 +960,7 @@ const Billing = () => {
                     <div className="receipt-meta">
                         <div className="meta-row">
                             <span>Date:</span>
-                            <span>{new Date().toLocaleDateString()}</span>
+                            <span>{formatDate(new Date())}</span>
                         </div>
                         <div className="meta-row">
                             <span>Customer:</span>
