@@ -1,5 +1,6 @@
 import html2pdf from 'html2pdf.js';
 import { notifyError } from './notifications';
+import { formatDate } from './formatDate';
 
 function escapeHtml(s) {
     if (s == null || s === undefined) return '';
@@ -163,7 +164,7 @@ function buildInnerHtml(sales, analytics, periodLabel) {
             return `<tr>
                 <td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;">${idx + 1}</td>
                 <td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;">#${sale.id}</td>
-                <td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;">${sale.purchase_date ? escapeHtml(new Date(sale.purchase_date).toLocaleDateString('en-GB')) : '—'}</td>
+                <td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;">${sale.purchase_date ? escapeHtml(formatDate(sale.purchase_date)) : '—'}</td>
                 <td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;">${escapeHtml(sale.products?.name || '—')}</td>
                 <td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px;">${escapeHtml(sale.buyers?.name || 'Walk-in')}</td>
                 <td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;text-align:right;">${qty}</td>
