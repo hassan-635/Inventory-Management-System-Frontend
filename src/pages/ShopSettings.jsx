@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Store, MapPin, Phone, Save, RotateCcw, CheckCircle } from 'lucide-react';
 import { useShopSettings, saveShopSettings, DEFAULT_SHOP } from '../utils/useShopSettings';
 import './ShopSettings.css';
+import { formatDate } from '../utils/formatDate';
 
 export default function ShopSettings() {
     const currentShop = useShopSettings();
@@ -118,7 +119,7 @@ export default function ShopSettings() {
                         <div className="preview-badge">TAX INVOICE</div>
                         <div className="preview-divider" />
                         <div className="preview-row"><span>Customer:</span><span>Walk-in Customer</span></div>
-                        <div className="preview-row"><span>Date:</span><span>{new Date().toLocaleDateString()}</span></div>
+                        <div className="preview-row"><span>Date:</span><span>{formatDate(new Date())}</span></div>
                         <div className="preview-row"><span>Invoice #:</span><span>INV-001234</span></div>
                         <div className="preview-divider" />
                         <div className="preview-row" style={{ fontWeight: 700, fontSize: '1.1rem' }}>
