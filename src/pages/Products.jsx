@@ -8,6 +8,7 @@ import ScrollableTable from '../components/ScrollableTable';
 import { notifySuccess, notifyError, confirmAction } from '../utils/notifications';
 import { fuzzyMatch } from '../utils/fuzzySearch';
 import './Products.css';
+import { formatDate } from '../utils/formatDate';
 
 const Products = () => {
     const [products, setProducts] = useState([]);
@@ -756,7 +757,7 @@ const Products = () => {
                                             </span>
                                         </td>
                                         <td>{product.purchased_from || '-'}</td>
-                                        <td>{product.purchase_date ? new Date(product.purchase_date).toLocaleDateString() : '-'}</td>
+                                        <td>{product.purchase_date ? formatDate(product.purchase_date) : '-'}</td>
                                         <td>{product.total_quantity}</td>
                                         <td>
                                             <span className="qty-badge" style={{ backgroundColor: remaining === 0 ? 'rgba(239, 68, 68, 0.1)' : (remaining <= threshold ? 'rgba(234, 179, 8, 0.1)' : 'rgba(34, 197, 94, 0.1)'), color: remaining === 0 ? '#ef4444' : (remaining <= threshold ? '#ca8a04' : '#22c55e'), padding: '4px 8px', borderRadius: '12px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
