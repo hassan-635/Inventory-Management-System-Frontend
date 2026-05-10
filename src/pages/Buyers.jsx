@@ -8,6 +8,7 @@ import { notifySuccess, notifyError, confirmAction } from '../utils/notification
 import ScrollableTable from '../components/ScrollableTable';
 import { fuzzyMatch } from '../utils/fuzzySearch';
 import './Buyers.css';
+import { formatDate } from '../utils/formatDate';
 
 const Buyers = () => {
     const [buyers, setBuyers] = useState([]);
@@ -692,7 +693,7 @@ const Buyers = () => {
                                                         txn.type === 'payment' ? (
                                                             <>
                                                                 <td style={{ color: 'var(--success)' }}>
-                                                                    {txn.date ? new Date(txn.date).toLocaleDateString() : '-'}
+                                                                    {txn.date ? formatDate(txn.date) : '-'}
                                                                 </td>
                                                                 <td colSpan="2" style={{ color: 'var(--success)' }}>
                                                                     <span className="font-medium">💰 Payment Received ({txn.payment_method || 'Cash'})</span>
@@ -704,7 +705,7 @@ const Buyers = () => {
                                                         ) : (
                                                             <>
                                                                 <td style={{ color: 'var(--text-muted)' }}>
-                                                                    {txn.purchase_date ? new Date(txn.purchase_date).toLocaleDateString() : '-'}
+                                                                    {txn.purchase_date ? formatDate(txn.purchase_date) : '-'}
                                                                 </td>
                                                                 <td><span className="font-medium">{txn.products?.name || `Product ID: ${txn.product_id}`}</span></td>
                                                                 <td>{txn.quantity}</td>
