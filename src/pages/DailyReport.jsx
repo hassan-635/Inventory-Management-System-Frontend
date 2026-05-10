@@ -6,6 +6,7 @@ import CustomDatePicker from '../components/CustomDatePicker';
 import './Expenses.css';
 import ScrollableTable from '../components/ScrollableTable';
 import './Reports.css';
+import { formatDate } from '../utils/formatDate';
 
 const DailyReport = () => {
     const defaultDate = new Date().toISOString().split('T')[0];
@@ -194,7 +195,7 @@ const DailyReport = () => {
                         {/* Report Header */}
                         <div style={{ textAlign: 'center', marginBottom: '40px', borderBottom: '2px solid var(--border-color)', paddingBottom: '20px' }}>
                             <h1 style={{ fontSize: '1.8rem', color: 'var(--text-primary)', margin: '0 0 8px' }}>Store Daily Report</h1>
-                            <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', margin: 0 }}>Date: <strong>{new Date(reportDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}</strong></p>
+                            <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', margin: 0 }}>Date: <strong>{formatDate(reportDate)}</strong></p>
                         </div>
 
                         {/* ===== SUMMARY CARDS ===== */}
