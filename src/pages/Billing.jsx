@@ -243,13 +243,27 @@ const Billing = () => {
                     item.id === product.id ? { ...item, quantity: newTotalQty, cart_unit: selectedUnit } : item
                 ));
             } else {
-                setCart([...cart, { ...product, quantity: qtyToAdd, cart_unit: selectedUnit }]);
+                setCart([...cart, { ...product, quantity: qtyToAdd, cart_unit: selectedUnit, discounted_price: '' }]);
             }
             setSelectedProduct('');
             setProductSearchTerm('');
             setQuantity(1);
             setSelectedUnit('Per Piece');
         }
+    };
+
+    // Helper: get effective price for a cart item (discounted if set, otherwise original)
+    const getEffectivePrice = (item) => {
+        if (item.discounted_price !== '' && item.discounted_price != null && !isNaN(Number(item.discounted_price))) {
+            return Number(item.discounted_price);
+        }
+        return item.price;
+    };
+
+    const updateCartItemDiscount = (itemId, discountValue) => {
+        setCart(cart.map(item =>
+            item.id === itemId ? { ...item, discounted_price: discountValue } : item
+        ));
     };
 
     const removeFromCart = (id) => {
@@ -339,14 +353,15 @@ const Billing = () => {
             let currentOnlinePool = finalOnlineAmount;
 
             const computedCart = cart.map((item, i) => {
-                const itemTotal = item.price * item.quantity;
+                const effectivePrice = getEffectivePrice(item);
+                const itemTotal = effectivePrice * item.quantity;
                 const isLastItem = i === cart.length - 1;
 
                 let itemPaidAmount;
                 if (billType === 'credit') {
                     const ratio = total_value > 0 ? (itemTotal / total_value) : 0;
                     itemPaidAmount = isLastItem
-                        ? (userPaid - cart.slice(0, i).reduce((s, it) => s + Math.round((it.price * it.quantity / total_value) * userPaid), 0))
+                        ? (userPaid - cart.slice(0, i).reduce((s, it) => s + Math.round((getEffectivePrice(it) * it.quantity / total_value) * userPaid), 0))
                         : Math.round(ratio * userPaid);
                 } else {
                     itemPaidAmount = itemTotal;
@@ -368,9 +383,10 @@ const Billing = () => {
 
                 return {
                     product_id: item.id,
-                    product_name: item.name, // Added for error tracing
+                    product_name: item.name,
                     quantity: item.quantity,
-                    price: item.price,
+                    price: effectivePrice,
+                    original_price: item.price,
                     cart_unit: item.cart_unit,
                     itemPaidAmount,
                     thisCash,
@@ -445,7 +461,7 @@ const Billing = () => {
 
 
 
-    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const subtotal = cart.reduce((sum, item) => sum + (getEffectivePrice(item) * item.quantity), 0);
     const total = subtotal;
 
     // Validate that important fields are filled
@@ -909,31 +925,69 @@ const Billing = () => {
                                 <p>No items added yet</p>
                             </div>
                         ) : (
-                            cart.map(item => (
-                                <div key={item.id} className="cart-item animate-fade-in">
-                                    <div className="item-details">
-                                        <h4>{item.name}</h4>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px', fontSize: '0.85em', color: 'var(--text-muted)', alignItems: 'center' }}>
-                                            <span style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>{formatProductId(item.id)}</span>
-                                            {item.category && <span>• {item.category}</span>}
-                                            {item.color && (
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                    • <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: item.color, border: '1px solid rgba(255,255,255,0.2)', display: 'inline-block' }}></span> {item.color}
-                                                </span>
-                                            )}
+                            cart.map(item => {
+                                const effPrice = getEffectivePrice(item);
+                                const hasDiscount = item.discounted_price !== '' && item.discounted_price != null && !isNaN(Number(item.discounted_price));
+                                return (
+                                    <div key={item.id} className="cart-item animate-fade-in">
+                                        <div className="item-details" style={{ flex: 1 }}>
+                                            <h4>{item.name}</h4>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px', fontSize: '0.85em', color: 'var(--text-muted)', alignItems: 'center' }}>
+                                                <span style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>{formatProductId(item.id)}</span>
+                                                {item.category && <span>• {item.category}</span>}
+                                                {item.color && (
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        • <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: item.color, border: '1px solid rgba(255,255,255,0.2)', display: 'inline-block' }}></span> {item.color}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p style={{ marginTop: '4px' }}>
+                                                {hasDiscount ? (
+                                                    <>
+                                                        <span style={{ textDecoration: 'line-through', color: 'var(--text-muted)', fontSize: '0.9em' }}>Rs. {item.price}</span>
+                                                        {' '}
+                                                        <span style={{ color: '#22c55e', fontWeight: 700 }}>Rs. {effPrice}</span>
+                                                        {' '}
+                                                    </>
+                                                ) : (
+                                                    `Rs. ${item.price} `
+                                                )}
+                                                x {item.quantity} {item.cart_unit ? `(${stripPer(item.cart_unit)})` : ''}
+                                            </p>
+                                            {/* Discounted Price Input */}
+                                            <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Disc. Price (optional):</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    placeholder={`Original: ${item.price}`}
+                                                    value={item.discounted_price ?? ''}
+                                                    onChange={(e) => updateCartItemDiscount(item.id, e.target.value)}
+                                                    style={{
+                                                        width: '110px',
+                                                        padding: '3px 8px',
+                                                        fontSize: '0.82rem',
+                                                        borderRadius: '6px',
+                                                        border: hasDiscount ? '1px solid #22c55e' : '1px solid var(--border-color)',
+                                                        background: 'var(--input-bg, rgba(255,255,255,0.05))',
+                                                        color: hasDiscount ? '#22c55e' : 'var(--text-primary)',
+                                                        outline: 'none'
+                                                    }}
+                                                />
+                                                {hasDiscount && (
+                                                    <span style={{ fontSize: '0.75rem', color: '#22c55e' }}>✓ Saving Rs. {((item.price - effPrice) * item.quantity).toLocaleString()}</span>
+                                                )}
+                                            </div>
                                         </div>
-                                        <p style={{ marginTop: '4px' }}>
-                                            Rs. {item.price} x {item.quantity} {item.cart_unit ? `(${stripPer(item.cart_unit)})` : ''}
-                                        </p>
+                                        <div className="item-total">
+                                            <span style={{ color: hasDiscount ? '#22c55e' : undefined }}>Rs. {(effPrice * item.quantity).toLocaleString()}</span>
+                                            <button className="icon-btn-danger" onClick={() => removeFromCart(item.id)}>
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div className="item-total">
-                                        <span>Rs. {(item.price * item.quantity).toLocaleString()}</span>
-                                        <button className="icon-btn-danger" onClick={() => removeFromCart(item.id)}>
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                     </div>
                 </div>
@@ -980,24 +1034,40 @@ const Billing = () => {
                             <span>Qty</span>
                             <span>Total</span>
                         </div>
-                        {cart.map(item => (
-                            <div key={item.id} className="receipt-table-row">
-                                <span className="item-name-col">
-                                    <span style={{ fontWeight: 600 }}>{item.name}</span>
-                                    <div style={{ fontSize: '0.75em', color: '#666', marginTop: '3px', display: 'flex', flexWrap: 'wrap', gap: '4px', alignItems: 'center' }}>
-                                        <span>[{formatProductId(item.id)}]</span>
-                                        {item.category && <span>• {item.category}</span>}
-                                        {item.color && (
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                                                • <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: item.color, border: '1px solid #ccc', display: 'inline-block' }}></span> {item.color}
-                                            </span>
+                        {cart.map(item => {
+                            const effPrice = getEffectivePrice(item);
+                            const hasDiscount = item.discounted_price !== '' && item.discounted_price != null && !isNaN(Number(item.discounted_price));
+                            return (
+                                <div key={item.id} className="receipt-table-row">
+                                    <span className="item-name-col">
+                                        <span style={{ fontWeight: 600 }}>{item.name}</span>
+                                        <div style={{ fontSize: '0.75em', color: '#666', marginTop: '3px', display: 'flex', flexWrap: 'wrap', gap: '4px', alignItems: 'center' }}>
+                                            <span>[{formatProductId(item.id)}]</span>
+                                            {item.category && <span>• {item.category}</span>}
+                                            {item.color && (
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                                    • <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: item.color, border: '1px solid #ccc', display: 'inline-block' }}></span> {item.color}
+                                                </span>
+                                            )}
+                                            {hasDiscount && (
+                                                <span style={{ color: '#22c55e', fontWeight: 600 }}>• Discounted</span>
+                                            )}
+                                        </div>
+                                        {hasDiscount && (
+                                            <div style={{ fontSize: '0.73em', color: '#888', marginTop: '2px' }}>
+                                                <span style={{ textDecoration: 'line-through' }}>Rs. {item.price}</span>
+                                                {' → '}
+                                                <span style={{ color: '#22c55e', fontWeight: 700 }}>Rs. {effPrice}</span>
+                                            </div>
                                         )}
-                                    </div>
-                                </span>
-                                <span>{item.quantity} {item.cart_unit ? `(${stripPer(item.cart_unit)})` : ''}</span>
-                                <span>Rs. {(item.price * item.quantity).toLocaleString()}</span>
-                            </div>
-                        ))}
+                                    </span>
+                                    <span>{item.quantity} {item.cart_unit ? `(${stripPer(item.cart_unit)})` : ''}</span>
+                                    <span style={{ color: hasDiscount ? '#22c55e' : undefined, fontWeight: hasDiscount ? 700 : undefined }}>
+                                        Rs. {(effPrice * item.quantity).toLocaleString()}
+                                    </span>
+                                </div>
+                            );
+                        })}
                     </div>
 
                     <div className="receipt-summary">
