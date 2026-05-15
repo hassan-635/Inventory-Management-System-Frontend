@@ -955,27 +955,51 @@ const Billing = () => {
                                                 x {item.quantity} {item.cart_unit ? `(${stripPer(item.cart_unit)})` : ''}
                                             </p>
                                             {/* Discounted Price Input */}
-                                            <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Disc. Price (optional):</label>
+                                            <div style={{
+                                                marginTop: '8px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                background: hasDiscount ? 'rgba(34,197,94,0.06)' : 'rgba(255,255,255,0.03)',
+                                                border: hasDiscount ? '1px solid rgba(34,197,94,0.25)' : '1px dashed rgba(255,255,255,0.1)',
+                                                borderRadius: '8px',
+                                                padding: '6px 10px',
+                                            }}>
+                                                <label style={{
+                                                    fontSize: '0.78rem',
+                                                    color: hasDiscount ? '#22c55e' : 'var(--text-muted)',
+                                                    whiteSpace: 'nowrap',
+                                                    fontWeight: hasDiscount ? 600 : 400
+                                                }}>🏷️ Disc. Price:</label>
                                                 <input
                                                     type="number"
                                                     min="0"
-                                                    placeholder={`Original: ${item.price}`}
+                                                    placeholder={`Original: Rs. ${item.price}`}
                                                     value={item.discounted_price ?? ''}
                                                     onChange={(e) => updateCartItemDiscount(item.id, e.target.value)}
                                                     style={{
-                                                        width: '110px',
-                                                        padding: '3px 8px',
-                                                        fontSize: '0.82rem',
+                                                        flex: 1,
+                                                        minWidth: 0,
+                                                        padding: '5px 10px',
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: hasDiscount ? 600 : 400,
                                                         borderRadius: '6px',
-                                                        border: hasDiscount ? '1px solid #22c55e' : '1px solid var(--border-color)',
-                                                        background: 'var(--input-bg, rgba(255,255,255,0.05))',
+                                                        border: hasDiscount ? '1px solid rgba(34,197,94,0.5)' : '1px solid var(--border-color)',
+                                                        background: hasDiscount ? 'rgba(34,197,94,0.08)' : 'var(--input-bg, rgba(255,255,255,0.05))',
                                                         color: hasDiscount ? '#22c55e' : 'var(--text-primary)',
-                                                        outline: 'none'
+                                                        outline: 'none',
+                                                        boxShadow: hasDiscount ? '0 0 0 2px rgba(34,197,94,0.12)' : 'none',
                                                     }}
                                                 />
                                                 {hasDiscount && (
-                                                    <span style={{ fontSize: '0.75rem', color: '#22c55e' }}>✓ Saving Rs. {((item.price - effPrice) * item.quantity).toLocaleString()}</span>
+                                                    <span style={{
+                                                        fontSize: '0.73rem', color: '#22c55e', fontWeight: 700,
+                                                        whiteSpace: 'nowrap',
+                                                        background: 'rgba(34,197,94,0.12)',
+                                                        borderRadius: '20px', padding: '2px 8px'
+                                                    }}>
+                                                        −Rs. {((item.price - effPrice) * item.quantity).toLocaleString()}
+                                                    </span>
                                                 )}
                                             </div>
                                         </div>
