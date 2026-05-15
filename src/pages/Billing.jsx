@@ -978,8 +978,8 @@ const Billing = () => {
                                                     value={item.discounted_price ?? ''}
                                                     onChange={(e) => updateCartItemDiscount(item.id, e.target.value)}
                                                     style={{
-                                                        flex: 1,
-                                                        minWidth: 0,
+                                                        width: '150px',
+                                                        maxWidth: '150px',
                                                         padding: '5px 10px',
                                                         fontSize: '0.85rem',
                                                         fontWeight: hasDiscount ? 600 : 400,
