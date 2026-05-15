@@ -261,8 +261,21 @@ const Billing = () => {
     };
 
     const updateCartItemDiscount = (itemId, discountValue) => {
+        // Allow empty string (clears discount)
+        if (discountValue === '' || discountValue === null) {
+            setCart(cart.map(item =>
+                item.id === itemId ? { ...item, discounted_price: '' } : item
+            ));
+            return;
+        }
+        const num = Number(discountValue);
+        // Validate: must be >= 0 (negative not allowed)
+        if (isNaN(num) || num < 0) return;
+        // Clamp to original price (can't discount below 0 total)
+        const targetItem = cart.find(i => i.id === itemId);
+        const clamped = targetItem ? Math.min(num, targetItem.price) : num;
         setCart(cart.map(item =>
-            item.id === itemId ? { ...item, discounted_price: discountValue } : item
+            item.id === itemId ? { ...item, discounted_price: String(clamped) } : item
         ));
     };
 
