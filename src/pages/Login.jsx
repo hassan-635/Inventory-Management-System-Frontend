@@ -24,9 +24,9 @@ const Login = () => {
                     ? '/api/auth/login-developer'
                     : '/api/auth/login-salesman';
 
-                console.log(`Sending login request to ${endpoint}...`, { email: email });
+                // Removed log
                 const response = await api.post(endpoint, { email, password });
-                console.log('Login response:', response.data);
+                // Removed log
 
                 // Backend returns: { _id, name, email, role, token }
                 const { token, ...userData } = response.data;
