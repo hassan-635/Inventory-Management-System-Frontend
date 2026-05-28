@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import axios from 'axios';
 import { GitMerge, RefreshCw } from 'lucide-react';
+import api from '../utils/api';
 import { notifyError, notifySuccess, confirmAction } from '../utils/notifications';
 
 const defaultForm = {
@@ -21,15 +21,11 @@ export default function ProductMerge() {
   const [preview, setPreview] = useState(null);
   const [merging, setMerging] = useState(false);
 
-  const token = localStorage.getItem('inventory_token');
-
   const analyzePairs = async () => {
     setLoading(true);
     setLimitWarning('');
     try {
-      const { data } = await axios.post('/api/products/merge-analyze', { use_groq: true }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const { data } = await api.post('/api/products/merge-analyze', { use_groq: true });
       setPairs(Array.isArray(data?.pairs) ? data.pairs : []);
       setProviderStatus(data?.provider_status || 'rule_based');
       if (data?.limit_warning) setLimitWarning(data.limit_warning);
@@ -53,7 +49,7 @@ export default function ProductMerge() {
   const refreshPreview = async (pair = selectedPair, formData = form) => {
     if (!pair) return;
     try {
-      const { data } = await axios.post('/api/products/merge-preview', {
+      const { data } = await api.post('/api/products/merge-preview', {
         product_ids: [pair.left_product_id, pair.right_product_id],
         final_values: {
           name: formData.name,
@@ -62,7 +58,7 @@ export default function ProductMerge() {
           purchase_rate: formData.purchase_rate === '' ? null : Number(formData.purchase_rate),
           quantity_unit: formData.quantity_unit,
         }
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      });
       setPreview(data?.preview || null);
     } catch (err) {
       notifyError(err.response?.data?.error || 'Failed to generate preview.');
@@ -80,7 +76,7 @@ export default function ProductMerge() {
 
     setMerging(true);
     try {
-      await axios.post('/api/products/merge-execute', {
+      await api.post('/api/products/merge-execute', {
         product_ids: [selectedPair.left_product_id, selectedPair.right_product_id],
         survivor_product_id: selectedPair.left_product_id,
         provider_used: providerStatus,
@@ -91,7 +87,7 @@ export default function ProductMerge() {
           purchase_rate: form.purchase_rate === '' ? null : Number(form.purchase_rate),
           quantity_unit: form.quantity_unit || 'Per Piece',
         },
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      });
       notifySuccess('Products merged successfully.');
       setSelectedPair(null);
       setPreview(null);
