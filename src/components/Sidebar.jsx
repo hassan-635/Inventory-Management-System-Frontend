@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Truck, FileText, Package, BarChart3, LogOut, Receipt, CalendarDays, Building2, ClipboardList, Menu, X, Database, Settings } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, FileText, Package, BarChart3, LogOut, Receipt, CalendarDays, Building2, ClipboardList, Menu, X, Database, Settings, GitMerge } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import ThemeToggle from './ThemeToggle';
@@ -34,6 +34,7 @@ const Sidebar = () => {
 
     const navItems = [
         { path: '/products', name: 'Products', icon: <Package size={20} /> },
+        { path: '/product-merge', name: 'AI Merge', icon: <GitMerge size={20} /> },
         { path: '/buyers', name: 'Customers (Credit)', icon: <Users size={20} /> },
         { path: '/companies', name: 'Companies Ledger', icon: <Building2 size={20} /> },
         { path: '/suppliers', name: 'Suppliers', icon: <Truck size={20} /> },
