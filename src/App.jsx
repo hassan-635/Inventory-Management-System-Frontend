@@ -11,6 +11,7 @@ const Signup = lazy(() => import('./pages/Signup'));
 const DeveloperDashboard = lazy(() => import('./pages/DeveloperDashboard'));
 const DashboardAnalytics = lazy(() => import('./pages/DashboardAnalytics'));
 const Products = lazy(() => import('./pages/Products'));
+const ProductMerge = lazy(() => import('./pages/ProductMerge'));
 const Buyers = lazy(() => import('./pages/Buyers'));
 const Suppliers = lazy(() => import('./pages/Suppliers'));
 const Billing = lazy(() => import('./pages/Billing'));
@@ -68,6 +69,7 @@ function App() {
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<DashboardAnalytics />} />
               <Route path="products" element={<Products />} />
+              <Route path="product-merge" element={<ProductMerge />} />
               <Route path="buyers" element={<Buyers />} />
               <Route path="suppliers" element={<Suppliers />} />
               <Route path="billing" element={<Billing />} />
