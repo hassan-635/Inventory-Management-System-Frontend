@@ -128,14 +128,40 @@ export default function ProductMerge() {
         ) : (
           <div style={{ display: 'grid', gap: 12 }}>
             {pairs.map((pair) => (
-              <div key={pair.pair_id} style={{ border: '1px solid var(--border-color)', borderRadius: 12, padding: 12, background: 'var(--bg-secondary)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                  <strong>{pair.left_name}</strong>
-                  <span style={{ color: 'var(--accent-primary)', fontWeight: 700 }}>{Math.round((pair.confidence || 0) * 100)}%</span>
+              <div key={pair.pair_id} style={{ border: '1px solid var(--border-color)', borderRadius: 12, padding: 16, background: 'var(--bg-secondary)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Match Confidence</h3>
+                  <span style={{ color: 'var(--accent-primary)', fontWeight: 700, fontSize: '1.2rem', padding: '4px 8px', background: 'var(--bg-primary)', borderRadius: 6 }}>{Math.round((pair.confidence || 0) * 100)}%</span>
                 </div>
-                <p style={{ margin: '6px 0 0', color: 'var(--text-secondary)' }}>{pair.right_name}</p>
-                <p style={{ margin: '6px 0 10px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                  Reason: {(pair.reason_tokens || []).join(', ') || 'name similarity'}
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
+                  <div style={{ padding: 12, background: 'var(--bg-primary)', borderRadius: 8, border: '1px solid var(--border-color)' }}>
+                    <strong style={{ display: 'block', marginBottom: 12, color: 'var(--accent-primary)', fontSize: '1.05rem' }}>{pair.left_name}</strong>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '6px 12px', fontSize: '0.9rem' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>ID:</span> <span style={{ fontWeight: 500 }}>{pair.left_product?.id || '-'}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>Category:</span> <span>{pair.left_product?.category || '-'}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>Color:</span> <span>{pair.left_product?.color || '-'}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>Sale Price:</span> <span>{pair.left_product?.price || '-'}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>Purchase:</span> <span>{pair.left_product?.purchase_rate || '-'}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>Stock:</span> <span>{pair.left_product?.remaining_quantity ?? '-'} / {pair.left_product?.total_quantity ?? '-'} {pair.left_product?.quantity_unit || ''}</span>
+                    </div>
+                  </div>
+
+                  <div style={{ padding: 12, background: 'var(--bg-primary)', borderRadius: 8, border: '1px solid var(--border-color)' }}>
+                    <strong style={{ display: 'block', marginBottom: 12, color: 'var(--text-primary)', fontSize: '1.05rem' }}>{pair.right_name}</strong>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '6px 12px', fontSize: '0.9rem' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>ID:</span> <span style={{ fontWeight: 500 }}>{pair.right_product?.id || '-'}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>Category:</span> <span>{pair.right_product?.category || '-'}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>Color:</span> <span>{pair.right_product?.color || '-'}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>Sale Price:</span> <span>{pair.right_product?.price || '-'}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>Purchase:</span> <span>{pair.right_product?.purchase_rate || '-'}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>Stock:</span> <span>{pair.right_product?.remaining_quantity ?? '-'} / {pair.right_product?.total_quantity ?? '-'} {pair.right_product?.quantity_unit || ''}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <p style={{ margin: '12px 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  <span style={{ fontWeight: 600 }}>Reason:</span> {(pair.reason_tokens || []).join(', ') || 'name similarity'}
                 </p>
                 
                 {selectedPair?.pair_id === pair.pair_id ? (
