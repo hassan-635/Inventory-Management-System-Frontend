@@ -137,53 +137,55 @@ export default function ProductMerge() {
                 <p style={{ margin: '6px 0 10px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                   Reason: {(pair.reason_tokens || []).join(', ') || 'name similarity'}
                 </p>
-                <button className="btn-secondary" onClick={() => openPair(pair)}>Open Merge Form</button>
+                
+                {selectedPair?.pair_id === pair.pair_id ? (
+                  <div style={{ marginTop: 16, padding: 16, background: 'var(--bg-primary)', borderRadius: 8, border: '1px solid var(--border-color)' }}>
+                    <h3 style={{ marginTop: 0 }}>Finalize Merge</h3>
+                    <div className="form-grid">
+                      <div className="input-group">
+                        <label>Final Name *</label>
+                        <input className="input-field" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
+                      </div>
+                      <div className="input-group">
+                        <label>Category</label>
+                        <input className="input-field" value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))} />
+                      </div>
+                      <div className="input-group">
+                        <label>Sale Price *</label>
+                        <input className="input-field" type="number" value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))} />
+                      </div>
+                      <div className="input-group">
+                        <label>Purchase Price</label>
+                        <input className="input-field" type="number" value={form.purchase_rate} onChange={(e) => setForm((p) => ({ ...p, purchase_rate: e.target.value }))} />
+                      </div>
+                      <div className="input-group">
+                        <label>Unit</label>
+                        <input className="input-field" value={form.quantity_unit} onChange={(e) => setForm((p) => ({ ...p, quantity_unit: e.target.value }))} />
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                      <button className="btn-secondary" onClick={() => setSelectedPair(null)}>Cancel</button>
+                      <button className="btn-secondary" onClick={() => refreshPreview()}>Refresh Preview</button>
+                      <button className="btn-primary" onClick={executeMerge} disabled={merging}>{merging ? 'Merging...' : 'Confirm Merge'}</button>
+                    </div>
+
+                    {preview ? (
+                      <div style={{ marginTop: 12, border: '1px solid var(--border-color)', borderRadius: 10, padding: 10 }}>
+                        <strong>Preview</strong>
+                        <p style={{ margin: '8px 0 0' }}>Total Qty: {preview.total_quantity}</p>
+                        <p style={{ margin: '4px 0 0' }}>Remaining Qty: {preview.remaining_quantity}</p>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <button className="btn-secondary" onClick={() => openPair(pair)}>Open Merge Form</button>
+                )}
               </div>
             ))}
           </div>
         )}
       </div>
-
-      {selectedPair && (
-        <div className="glass-panel" style={{ marginTop: 16, padding: 16 }}>
-          <h3 style={{ marginTop: 0 }}>Finalize Merge</h3>
-          <div className="form-grid">
-            <div className="input-group">
-              <label>Final Name *</label>
-              <input className="input-field" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
-            </div>
-            <div className="input-group">
-              <label>Category</label>
-              <input className="input-field" value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))} />
-            </div>
-            <div className="input-group">
-              <label>Sale Price *</label>
-              <input className="input-field" type="number" value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))} />
-            </div>
-            <div className="input-group">
-              <label>Purchase Price</label>
-              <input className="input-field" type="number" value={form.purchase_rate} onChange={(e) => setForm((p) => ({ ...p, purchase_rate: e.target.value }))} />
-            </div>
-            <div className="input-group">
-              <label>Unit</label>
-              <input className="input-field" value={form.quantity_unit} onChange={(e) => setForm((p) => ({ ...p, quantity_unit: e.target.value }))} />
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-            <button className="btn-secondary" onClick={() => refreshPreview()}>Refresh Preview</button>
-            <button className="btn-primary" onClick={executeMerge} disabled={merging}>{merging ? 'Merging...' : 'Confirm Merge'}</button>
-          </div>
-
-          {preview ? (
-            <div style={{ marginTop: 12, border: '1px solid var(--border-color)', borderRadius: 10, padding: 10 }}>
-              <strong>Preview</strong>
-              <p style={{ margin: '8px 0 0' }}>Total Qty: {preview.total_quantity}</p>
-              <p style={{ margin: '4px 0 0' }}>Remaining Qty: {preview.remaining_quantity}</p>
-            </div>
-          ) : null}
-        </div>
-      )}
     </div>
   );
 }
