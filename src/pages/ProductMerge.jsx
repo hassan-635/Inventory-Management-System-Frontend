@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { GitMerge, RefreshCw, X, Eye } from 'lucide-react';
+import { GitMerge, RefreshCw, X, Eye, Trash2, AlertTriangle, Check, ListChecks } from 'lucide-react';
 import api from '../utils/api';
 import { notifyError, notifySuccess, confirmAction } from '../utils/notifications';
 import CustomDropdown from '../components/CustomDropdown';
+import MergeSideList from '../components/MergeSideList';
 
 const defaultForm = {
   name: '',
@@ -22,6 +23,23 @@ export default function ProductMerge() {
   const [form, setForm] = useState(defaultForm);
   const [preview, setPreview] = useState(null);
   const [merging, setMerging] = useState(false);
+
+  // --- Pending Merges Local State ---
+  const [pendingMerges, setPendingMerges] = useState(() => {
+    try {
+      const stored = localStorage.getItem('inventory_pending_merges');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [isSideListOpen, setIsSideListOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('inventory_pending_merges', JSON.stringify(pendingMerges));
+  }, [pendingMerges]);
+  // ----------------------------------
 
   const analyzePairs = async () => {
     setLoading(true);
@@ -87,35 +105,87 @@ export default function ProductMerge() {
       notifyError('Final name and sale price are required.');
       return;
     }
-    const ok = await confirmAction('Confirm Merge', 'Merge selected pair into one product?');
+    
+    const newPendingMerge = {
+      id: Date.now().toString(),
+      pair_id: selectedPair.pair_id,
+      left_product_id: selectedPair.left_product_id,
+      right_product_id: selectedPair.right_product_id,
+      left_name: selectedPair.left_name,
+      right_name: selectedPair.right_name,
+      survivor_product_id: selectedPair.left_product_id,
+      provider_used: providerStatus,
+      final_values: {
+        name: form.name.trim(),
+        category: form.category,
+        color: form.color,
+        price: Number(form.price),
+        purchase_rate: form.purchase_rate === '' ? null : Number(form.purchase_rate),
+        quantity_unit: form.quantity_unit || 'Piece',
+      },
+      preview_total_qty: preview?.total_quantity || 0,
+      preview_remaining_qty: preview?.remaining_quantity || 0,
+    };
+
+    setPendingMerges(prev => [...prev, newPendingMerge]);
+    notifySuccess('Merge added to pending list.');
+    setSelectedPair(null);
+    setPreview(null);
+    setForm(defaultForm);
+    setIsSideListOpen(true);
+  };
+
+  const removePendingMerge = (id) => {
+    setPendingMerges(prev => prev.filter(m => m.id !== id));
+  };
+
+  const processPendingMerges = async () => {
+    if (pendingMerges.length === 0) return;
+    const ok = await confirmAction(
+      'Process All Merges?', 
+      'WARNING: This action is permanent and cannot be undone. All selected merges will be permanently written to the database. Proceed?'
+    );
     if (!ok) return;
 
-    setMerging(true);
-    try {
-      await api.post('/api/products/merge-execute', {
-        product_ids: [selectedPair.left_product_id, selectedPair.right_product_id],
-        survivor_product_id: selectedPair.left_product_id,
-        provider_used: providerStatus,
-        final_values: {
-          name: form.name.trim(),
-          category: form.category,
-          color: form.color,
-          price: Number(form.price),
-          purchase_rate: form.purchase_rate === '' ? null : Number(form.purchase_rate),
-          quantity_unit: form.quantity_unit || 'Piece',
-        },
-      });
-      notifySuccess('Products merged successfully.');
-      setSelectedPair(null);
-      setPreview(null);
-      setForm(defaultForm);
-      analyzePairs();
-    } catch (err) {
-      notifyError(err.response?.data?.error || 'Merge failed.');
-    } finally {
-      setMerging(false);
+    setIsProcessing(true);
+    let successCount = 0;
+    let errors = [];
+
+    for (const merge of pendingMerges) {
+      try {
+        await api.post('/api/products/merge-execute', {
+          product_ids: [merge.left_product_id, merge.right_product_id],
+          survivor_product_id: merge.survivor_product_id,
+          provider_used: merge.provider_used,
+          final_values: merge.final_values,
+        });
+        successCount++;
+      } catch (err) {
+        errors.push(`Merge ${merge.left_name} + ${merge.right_name} failed: ${err.response?.data?.error || err.message}`);
+      }
     }
+
+    if (errors.length > 0) {
+      notifyError(`Processed ${successCount} merges. ${errors.length} failed:\\n` + errors.join('\\n'));
+    } else {
+      notifySuccess(`Successfully processed ${successCount} merges!`);
+    }
+
+    setPendingMerges([]);
+    setIsSideListOpen(false);
+    setIsProcessing(false);
+    analyzePairs();
   };
+
+  const filteredPairs = pairs.filter(pair => {
+    const isPending = pendingMerges.some(m => 
+      m.left_product_id === pair.left_product_id || 
+      m.left_product_id === pair.right_product_id ||
+      m.right_product_id === pair.left_product_id || 
+      m.right_product_id === pair.right_product_id
+    );
+    return !isPending;
+  });
 
   const [syncing, setSyncing] = useState(false);
   const [missingCount, setMissingCount] = useState(0);
@@ -183,7 +253,7 @@ export default function ProductMerge() {
       </div>
 
       <div className="glass-panel" style={{ padding: 16, marginBottom: 16 }}>
-        {!pairs.length ? (
+        {!filteredPairs.length ? (
           <div className="empty-state">
             <GitMerge size={42} className="empty-icon" />
             <h3>No pairs found</h3>
@@ -191,7 +261,7 @@ export default function ProductMerge() {
           </div>
         ) : (
           <div style={{ display: 'grid', gap: 12 }}>
-            {pairs.map((pair) => (
+            {filteredPairs.map((pair) => (
               <div key={pair.pair_id} style={{ border: '1px solid var(--border-color)', borderRadius: 12, padding: 16, background: 'var(--bg-secondary)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
                   <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Match Confidence</h3>
@@ -405,6 +475,19 @@ export default function ProductMerge() {
           </div>
         )}
       </div>
+
+      <MergeSideList 
+        isOpen={isSideListOpen}
+        onClose={() => setIsSideListOpen(false)}
+        onToggle={() => setIsSideListOpen(!isSideListOpen)}
+        pendingMerges={pendingMerges}
+        onRemoveMerge={removePendingMerge}
+        onClearAll={() => {
+          if (window.confirm('Clear all pending merges?')) setPendingMerges([]);
+        }}
+        onProcessMerges={processPendingMerges}
+        isProcessing={isProcessing}
+      />
     </div>
   );
 }
