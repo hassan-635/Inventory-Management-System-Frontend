@@ -341,7 +341,16 @@ export default function ProductMerge() {
                     ) : null}
                   </div>
                 ) : (
-                  <button className="btn-secondary" onClick={() => openPair(pair)}>Open Merge Form</button>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+                    <button 
+                      className="btn-primary" 
+                      style={{ borderRadius: '50%', width: 44, height: 44, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px var(--accent-glow)' }} 
+                      onClick={() => openPair(pair)}
+                      title="Open Merge Form"
+                    >
+                      <GitMerge size={22} />
+                    </button>
+                  </div>
                 )}
               </div>
             ))}
