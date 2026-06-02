@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { GitMerge, RefreshCw } from 'lucide-react';
+import { GitMerge, RefreshCw, X, Eye } from 'lucide-react';
 import api from '../utils/api';
 import { notifyError, notifySuccess, confirmAction } from '../utils/notifications';
 import CustomDropdown from '../components/CustomDropdown';
@@ -326,10 +326,32 @@ export default function ProductMerge() {
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                      <button className="btn-secondary" onClick={() => setSelectedPair(null)}>Cancel</button>
-                      <button className="btn-secondary" onClick={() => refreshPreview()}>Refresh Preview</button>
-                      <button className="btn-primary" onClick={executeMerge} disabled={merging}>{merging ? 'Merging...' : 'Confirm Merge'}</button>
+                    <div style={{ display: 'flex', gap: 12, marginTop: 24, justifyContent: 'flex-end', borderTop: '1px solid var(--border-color)', paddingTop: 16 }}>
+                      <button 
+                        onClick={() => setSelectedPair(null)}
+                        style={{ padding: '8px 16px', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: '8px', cursor: 'pointer', transition: '0.2s', display: 'flex', alignItems: 'center', gap: '6px' }}
+                        onMouseOver={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'var(--bg-secondary)'; }}
+                        onMouseOut={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}
+                      >
+                        <X size={16} /> Cancel
+                      </button>
+                      <button 
+                        onClick={() => refreshPreview()}
+                        style={{ padding: '8px 16px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', cursor: 'pointer', transition: '0.2s', display: 'flex', alignItems: 'center', gap: '6px' }}
+                        onMouseOver={(e) => { e.currentTarget.style.borderColor = 'var(--accent-primary)'; }}
+                        onMouseOut={(e) => { e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+                      >
+                        <Eye size={16} /> Preview
+                      </button>
+                      <button 
+                        className="btn-primary" 
+                        style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 20px', borderRadius: '8px' }}
+                        onClick={executeMerge} 
+                        disabled={merging}
+                      >
+                        {merging ? <RefreshCw size={16} className="spin" /> : <GitMerge size={16} />}
+                        {merging ? 'Merging...' : 'Confirm Merge'}
+                      </button>
                     </div>
 
                     {preview ? (
