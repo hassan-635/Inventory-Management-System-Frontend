@@ -131,7 +131,7 @@ export default function ProductMerge() {
       </div>
 
       <div className="glass-panel" style={{ padding: 14, marginBottom: 16 }}>
-        <strong>Provider:</strong> {providerStatus === 'groq' ? 'Groq' : 'Rule-based'}
+        <strong>Provider:</strong> {providerStatus === 'ai' ? '🧠 AI Verified' : providerStatus === 'vector' ? '🔍 Vector Search' : '📏 Rule-based'}
         {limitWarning ? <p style={{ color: '#fbbf24', marginTop: 6 }}>{limitWarning}</p> : null}
       </div>
 
