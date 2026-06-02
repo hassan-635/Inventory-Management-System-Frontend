@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GitMerge, RefreshCw } from 'lucide-react';
 import api from '../utils/api';
 import { notifyError, notifySuccess, confirmAction } from '../utils/notifications';
@@ -117,6 +117,53 @@ export default function ProductMerge() {
     }
   };
 
+  const [syncing, setSyncing] = useState(false);
+  const [missingCount, setMissingCount] = useState(0);
+
+  useEffect(() => {
+    analyzePairs();
+  }, []);
+
+  const syncAiNames = async () => {
+    try {
+      // Check current missing count first
+      const { data: countData } = await api.get('/api/products/missing-ai-count');
+      if (countData.missing_count === 0) {
+        notifySuccess('All products are already synced with AI names.');
+        return;
+      }
+      
+      const ok = await confirmAction('Sync Old Products', `This will run a background task to generate AI names for ${countData.missing_count} older products. Continue?`);
+      if (!ok) return;
+      
+      setMissingCount(countData.missing_count);
+      setSyncing(true);
+
+      await api.post('/api/products/backfill-ai-names');
+      notifySuccess('Started syncing old products in the background.');
+
+      // Poll for progress every 3 seconds
+      const interval = setInterval(async () => {
+        try {
+          const { data } = await api.get('/api/products/missing-ai-count');
+          setMissingCount(data.missing_count);
+          if (data.missing_count === 0) {
+            clearInterval(interval);
+            setSyncing(false);
+            notifySuccess('Sync completed successfully!');
+            analyzePairs(); // Refresh the pairs as new AI names might reveal new duplicates
+          }
+        } catch (err) {
+          console.error('Error polling missing AI count:', err);
+        }
+      }, 3000);
+
+    } catch (err) {
+      notifyError(err.response?.data?.error || 'Failed to start AI sync.');
+      setSyncing(false);
+    }
+  };
+
   return (
     <div className="page-container">
       <div className="page-header">
@@ -124,9 +171,9 @@ export default function ProductMerge() {
           <h1 className="page-title">AI Product Merge</h1>
           <p className="page-subtitle">Analyze similar products then merge pair-to-one safely.</p>
         </div>
-        <button className="btn-primary flex items-center gap-2" onClick={analyzePairs} disabled={loading}>
-          {loading ? <RefreshCw size={18} className="spin" /> : <GitMerge size={18} />}
-          <span>Analyze Similar Products</span>
+        <button className="btn-secondary flex items-center gap-2" onClick={analyzePairs} disabled={loading}>
+          {loading ? <RefreshCw size={18} className="spin" /> : <RefreshCw size={18} />}
+          <span>Refresh List</span>
         </button>
       </div>
 
@@ -135,12 +182,12 @@ export default function ProductMerge() {
         {limitWarning ? <p style={{ color: '#fbbf24', marginTop: 6 }}>{limitWarning}</p> : null}
       </div>
 
-      <div className="glass-panel" style={{ padding: 16 }}>
+      <div className="glass-panel" style={{ padding: 16, marginBottom: 16 }}>
         {!pairs.length ? (
           <div className="empty-state">
             <GitMerge size={42} className="empty-icon" />
-            <h3>No pairs yet</h3>
-            <p>Click Analyze Similar Products to fetch two-product merge suggestions.</p>
+            <h3>No pairs found</h3>
+            <p>Your inventory is fully optimized! No duplicate products found.</p>
           </div>
         ) : (
           <div style={{ display: 'grid', gap: 12 }}>
@@ -298,6 +345,32 @@ export default function ProductMerge() {
                 )}
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      <div className="glass-panel" style={{ padding: 20, textAlign: 'center' }}>
+        <h3>Missing AI Sync</h3>
+        <p style={{ color: 'var(--text-muted)', marginBottom: 16 }}>
+          Sync older products with the new AI Vector system to find hidden duplicates.
+        </p>
+        {!syncing ? (
+          <button className="btn-primary" onClick={syncAiNames}>
+            <RefreshCw size={16} style={{ display: 'inline', marginRight: 8 }} />
+            Sync Old Products with AI
+          </button>
+        ) : (
+          <div style={{ marginTop: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, color: 'var(--accent-primary)', marginBottom: 12 }}>
+              <RefreshCw size={20} className="spin" />
+              <span style={{ fontWeight: 600 }}>Syncing in Background...</span>
+            </div>
+            <div style={{ width: '100%', maxWidth: 400, margin: '0 auto', background: 'var(--bg-secondary)', height: 8, borderRadius: 4, overflow: 'hidden' }}>
+              <div className="progress-bar-animated" style={{ width: '100%', height: '100%', background: 'var(--accent-primary)', animation: 'indeterminate 1.5s infinite linear' }} />
+            </div>
+            <p style={{ marginTop: 8, fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+              Remaining products: <strong style={{ color: 'var(--text-primary)' }}>{missingCount}</strong>
+            </p>
           </div>
         )}
       </div>
