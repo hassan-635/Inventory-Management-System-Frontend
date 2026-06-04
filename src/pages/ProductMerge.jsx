@@ -196,37 +196,75 @@ export default function ProductMerge() {
 
   const syncAiNames = async () => {
     try {
-      // Check current missing count first
-      const { data: countData } = await api.get('/api/products/missing-ai-count');
-      if (countData.missing_count === 0) {
-        notifySuccess('All products are already synced with AI names.');
-        return;
+      // First check if there are any missing products
+      const { data: missingData } = await api.get('/api/products/missing-ai-count');
+      const missingCount = missingData.missing_count;
+
+      const { data: allData } = await api.get('/api/products/missing-ai-count?forceAll=true');
+      const allCount = allData.missing_count;
+
+      let forceAll = false;
+      let countToSync = missingCount;
+
+      if (missingCount === 0) {
+        // No missing products. Ask if they want to force regenerate all.
+        const ok = await confirmAction('Force Regenerate All', `All products already have AI names. Do you want to FORCE REGENERATE AI names for all ${allCount} products? This will use AI quota and take some time.`);
+        if (!ok) return;
+        forceAll = true;
+        countToSync = allCount;
+      } else {
+        // Ask if they want to sync only missing or all
+        const ok = await confirmAction('Sync AI Names', `Found ${missingCount} products missing AI names. Click OK to sync only missing products, or Cancel if you want to force regenerate all.`);
+        if (ok) {
+          forceAll = false;
+          countToSync = missingCount;
+        } else {
+          const forceOk = await confirmAction('Force Regenerate All', `WARNING: You chose to skip syncing missing only. Do you want to FORCE REGENERATE ALL ${allCount} products?`);
+          if (!forceOk) return;
+          forceAll = true;
+          countToSync = allCount;
+        }
       }
       
-      const ok = await confirmAction('Sync Old Products', `This will run a background task to generate AI names for ${countData.missing_count} older products. Continue?`);
-      if (!ok) return;
-      
-      setMissingCount(countData.missing_count);
+      setMissingCount(countToSync);
       setSyncing(true);
 
-      await api.post('/api/products/backfill-ai-names');
-      notifySuccess('Started syncing old products in the background.');
+      await api.post('/api/products/backfill-ai-names', { forceAll });
+      notifySuccess(`Started ${forceAll ? 'force regenerating all' : 'syncing missing'} products in the background.`);
 
       // Poll for progress every 3 seconds
       const interval = setInterval(async () => {
         try {
-          const { data } = await api.get('/api/products/missing-ai-count');
-          setMissingCount(data.missing_count);
-          if (data.missing_count === 0) {
-            clearInterval(interval);
-            setSyncing(false);
-            notifySuccess('Sync completed successfully!');
-            analyzePairs(); // Refresh the pairs as new AI names might reveal new duplicates
+          // If forceAll is true, missing-ai-count endpoint won't help us track progress easily unless we track how many are processed. 
+          // But actually, getMissingAiCount with forceAll=true just returns total count. It won't decrease!
+          // So if forceAll is true, we can't poll progress using getMissingAiCount easily.
+          // To fix this, we will just poll the normal missing count if forceAll is false.
+          // If forceAll is true, we might just have to stop syncing visually after a timeout or let the user refresh manually.
+          if (!forceAll) {
+            const { data } = await api.get('/api/products/missing-ai-count');
+            setMissingCount(data.missing_count);
+            if (data.missing_count === 0) {
+              clearInterval(interval);
+              setSyncing(false);
+              notifySuccess('Sync completed successfully!');
+              analyzePairs(); 
+            }
+          } else {
+            // For forceAll, just show it's running and don't poll count. We will just auto-stop after 5 minutes or they can refresh.
+            // Let's just clear interval and keep it spinning until they refresh.
           }
         } catch (err) {
           console.error('Error polling missing AI count:', err);
         }
       }, 3000);
+
+      // Auto stop syncing state after 30 seconds for forceAll just as a fallback
+      if (forceAll) {
+        setTimeout(() => {
+          setSyncing(false);
+          notifySuccess('Force regeneration triggered. Please wait a few minutes and refresh the page to see updated pairs.');
+        }, 15000);
+      }
 
     } catch (err) {
       notifyError(err.response?.data?.error || 'Failed to start AI sync.');
