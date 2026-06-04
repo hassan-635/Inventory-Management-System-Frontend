@@ -189,6 +189,7 @@ export default function ProductMerge() {
 
   const [syncing, setSyncing] = useState(false);
   const [missingCount, setMissingCount] = useState(0);
+  const [syncProgress, setSyncProgress] = useState({ current: 0, total: 0 });
 
   useEffect(() => {
     analyzePairs();
@@ -232,39 +233,26 @@ export default function ProductMerge() {
       await api.post('/api/products/backfill-ai-names', { forceAll });
       notifySuccess(`Started ${forceAll ? 'force regenerating all' : 'syncing missing'} products in the background.`);
 
-      // Poll for progress every 3 seconds
+      // Poll for progress every 2 seconds
       const interval = setInterval(async () => {
         try {
-          // If forceAll is true, missing-ai-count endpoint won't help us track progress easily unless we track how many are processed. 
-          // But actually, getMissingAiCount with forceAll=true just returns total count. It won't decrease!
-          // So if forceAll is true, we can't poll progress using getMissingAiCount easily.
-          // To fix this, we will just poll the normal missing count if forceAll is false.
-          // If forceAll is true, we might just have to stop syncing visually after a timeout or let the user refresh manually.
-          if (!forceAll) {
-            const { data } = await api.get('/api/products/missing-ai-count');
-            setMissingCount(data.missing_count);
-            if (data.missing_count === 0) {
-              clearInterval(interval);
-              setSyncing(false);
-              notifySuccess('Sync completed successfully!');
-              analyzePairs(); 
-            }
+          const { data } = await api.get('/api/products/ai-sync-progress');
+          if (data && data.isSyncing) {
+            setSyncProgress({ current: data.current, total: data.total });
+          } else if (data && !data.isSyncing && data.total > 0) {
+             // Sync finished
+             clearInterval(interval);
+             setSyncing(false);
+             setSyncProgress({ current: data.total, total: data.total });
+             notifySuccess('Sync completed successfully!');
+             analyzePairs();
           } else {
-            // For forceAll, just show it's running and don't poll count. We will just auto-stop after 5 minutes or they can refresh.
-            // Let's just clear interval and keep it spinning until they refresh.
+             // Just in case it hasn't fully started yet, we keep polling but don't do anything
           }
         } catch (err) {
-          console.error('Error polling missing AI count:', err);
+          console.error('Error polling AI sync progress:', err);
         }
-      }, 3000);
-
-      // Auto stop syncing state after 30 seconds for forceAll just as a fallback
-      if (forceAll) {
-        setTimeout(() => {
-          setSyncing(false);
-          notifySuccess('Force regeneration triggered. Please wait a few minutes and refresh the page to see updated pairs.');
-        }, 15000);
-      }
+      }, 2000);
 
     } catch (err) {
       notifyError(err.response?.data?.error || 'Failed to start AI sync.');
@@ -504,11 +492,23 @@ export default function ProductMerge() {
               <RefreshCw size={20} className="spin" />
               <span style={{ fontWeight: 600 }}>Syncing in Background...</span>
             </div>
-            <div style={{ width: '100%', maxWidth: 400, margin: '0 auto', background: 'var(--bg-secondary)', height: 8, borderRadius: 4, overflow: 'hidden' }}>
-              <div className="progress-bar-animated" style={{ width: '100%', height: '100%', background: 'var(--accent-primary)', animation: 'indeterminate 1.5s infinite linear' }} />
+            
+            <div style={{ width: '100%', maxWidth: 400, margin: '0 auto', background: 'var(--bg-secondary)', height: 12, borderRadius: 6, overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+              <div 
+                style={{ 
+                  height: '100%', 
+                  background: 'var(--accent-primary)', 
+                  width: `${syncProgress.total > 0 ? Math.round((syncProgress.current / syncProgress.total) * 100) : 0}%`,
+                  transition: 'width 0.3s ease-out'
+                }} 
+              />
             </div>
-            <p style={{ marginTop: 8, fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-              Remaining products: <strong style={{ color: 'var(--text-primary)' }}>{missingCount}</strong>
+            
+            <p style={{ marginTop: 12, fontSize: '0.95rem', color: 'var(--text-muted)' }}>
+              Processed: <strong style={{ color: 'var(--accent-primary)' }}>{syncProgress.current}</strong> / <strong style={{ color: 'var(--text-primary)' }}>{syncProgress.total || missingCount}</strong> products
+              {syncProgress.total > 0 && (
+                <span style={{ marginLeft: 8, fontSize: '0.85rem' }}>({Math.round((syncProgress.current / syncProgress.total) * 100)}%)</span>
+              )}
             </p>
           </div>
         )}
